@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Samsons Inn – Daily Sales Tracker</title>
+<style>
+/* ── Reset & Base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy:    #1a3a5c;
+  --navy2:   #0f2540;
+  --gold:    #c8922e;
+  --gold2:   #e8b04a;
+  --cream:   #f7f4ef;
+  --white:   #ffffff;
+  --muted:   #6b7a8d;
+  --border:  #d4cfc7;
+  --green:   #2e7d52;
+  --red:     #c0392b;
+  --blue:    #2563eb;
+  --shadow:  0 2px 12px rgba(26,58,92,0.13);
+  --radius:  8px;
+}
+html { font-size: 15px; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--cream);
+  color: #1c2b3a;
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+.header {
+  background: var(--navy);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 58px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  position: sticky; top: 0; z-index: 100;
+}
+.header-brand { display: flex; align-items: center; gap: 12px; }
+.header-brand .logo {
+  width: 34px; height: 34px; background: var(--gold);
+  border-radius: 6px; display: grid; place-items: center;
+  font-weight: 800; font-size: 14px; color: var(--navy);
+  letter-spacing: -0.5px;
+}
+.header-brand h1 { color: var(--white); font-size: 1rem; font-weight: 600; letter-spacing: 0.3px; }
+.header-brand span { color: var(--gold2); font-size: 0.78rem; }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.date-badge {
+  background: rgba(255,255,255,0.1); color: var(--gold2);
+  padding: 4px 12px; border-radius: 20px; font-size: 0.78rem;
+  font-weight: 600; border: 1px solid rgba(255,255,255,0.15);
+}
+.nav-tabs {
+  display: flex; gap: 2px;
+  background: rgba(255,255,255,0.08); border-radius: 6px; padding: 3px;
+}
+.nav-tab {
+  padding: 5px 14px; border-radius: 4px; font-size: 0.78rem;
+  font-weight: 600; cursor: pointer; color: rgba(255,255,255,0.65);
+  border: none; background: transparent; transition: all 0.2s;
+}
+.nav-tab.active { background: var(--gold); color: var(--navy); }
+.nav-tab:hover:not(.active) { color: var(--white); background: rgba(255,255,255,0.12); }
+
+/* ── Layout ── */
+.container { max-width: 1100px; margin: 0 auto; padding: 20px 20px 60px; }
+.page { display: none; }
+.page.active { display: block; }
+
+/* ── Dashboard ── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px; margin-bottom: 24px;
+}
+.kpi-card {
+  background: var(--white); border-radius: var(--radius);
+  padding: 18px 20px; box-shadow: var(--shadow);
+  border-left: 4px solid var(--navy);
+}
+.kpi-card.gold  { border-left-color: var(--gold); }
+.kpi-card.green { border-left-color: var(--green); }
+.kpi-card.blue  { border-left-color: var(--blue); }
+.kpi-label { font-size: 0.72rem; font-weight: 700; color: var(--muted);
+             text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+.kpi-value { font-size: 1.45rem; font-weight: 800; color: var(--navy); line-height: 1; }
+.kpi-value.pkr::before { content: 'PKR '; font-size: 0.7em; font-weight: 600; color: var(--muted); }
+.kpi-sub   { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+
+.section-title {
+  font-size: 0.85rem; font-weight: 700; color: var(--navy);
+  text-transform: uppercase; letter-spacing: 0.6px;
+  margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+}
+.section-title::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+/* Chart bars */
+.bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 100px; }
+.bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.bar { width: 100%; background: var(--navy); border-radius: 3px 3px 0 0; min-height: 3px;
+       transition: height 0.4s; position: relative; }
+.bar.today-bar { background: var(--gold); }
+.bar-label { font-size: 0.65rem; color: var(--muted); white-space: nowrap; }
+.bar-val   { font-size: 0.64rem; color: var(--navy); font-weight: 700; }
+
+/* ── Submit Form ── */
+.form-card {
+  background: var(--white); border-radius: var(--radius);
+  box-shadow: var(--shadow); overflow: hidden;
+}
+.form-top {
+  background: var(--navy); padding: 16px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.form-top h2 { color: var(--white); font-size: 0.95rem; font-weight: 700; }
+.form-top .date-select {
+  display: flex; align-items: center; gap: 8px;
+}
+.form-top input[type="date"] {
+  background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25);
+  color: var(--white); padding: 5px 10px; border-radius: 5px;
+  font-size: 0.82rem; font-family: inherit;
+}
+.form-top input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
+
+/* Room grid */
+.room-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 12px; padding: 16px;
+}
+.room-card {
+  border: 1.5px solid var(--border); border-radius: var(--radius);
+  overflow: hidden; transition: border-color 0.2s;
+}
+.room-card.occupied { border-color: var(--gold); }
+.room-card.staff    { border-color: #5b8fe8; }
+
+.room-header {
+  padding: 8px 12px; background: #f0eee9;
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; user-select: none;
+}
+.room-header.occupied { background: #fdf3e0; }
+.room-header.staff    { background: #e8f0fe; }
+.room-num {
+  font-weight: 800; font-size: 0.88rem; color: var(--navy);
+  background: var(--navy); color: var(--white);
+  padding: 2px 8px; border-radius: 4px;
+}
+.room-num.staff-room { background: #2563eb; }
+.room-status {
+  font-size: 0.72rem; font-weight: 700;
+  color: var(--muted); text-transform: uppercase;
+}
+.room-status.occ    { color: var(--gold); }
+.room-status.staff-s { color: #2563eb; }
+.room-toggle {
+  width: 40px; height: 22px; border-radius: 11px;
+  background: var(--border); position: relative; cursor: pointer;
+  transition: background 0.2s; flex-shrink: 0;
+  border: none; outline: none;
+}
+.room-toggle::after {
+  content: ''; position: absolute; top: 3px; left: 3px;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--white); transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.room-toggle.on { background: var(--gold); }
+.room-toggle.on::after { transform: translateX(18px); }
+.room-toggle.staff-on { background: #2563eb; }
+
+.room-body { padding: 10px 12px; display: none; }
+.room-body.visible { display: block; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.field-row.three { grid-template-columns: 1fr 1fr 1fr; }
+.field-row.full  { grid-template-columns: 1fr; }
+.field label { font-size: 0.68rem; font-weight: 700; color: var(--muted);
+               text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 3px; }
+.field input, .field select {
+  width: 100%; padding: 6px 8px; border: 1.5px solid var(--border);
+  border-radius: 5px; font-size: 0.82rem; font-family: inherit;
+  color: #1c2b3a; background: var(--white); transition: border-color 0.2s;
+}
+.field input:focus, .field select:focus {
+  outline: none; border-color: var(--navy);
+}
+.field input.money { text-align: right; font-weight: 600; }
+.money-group { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.money-label {
+  font-size: 0.7rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 2px;
+}
+.noncash-badge {
+  display: inline-block; background: #e8f0fe; color: #2563eb;
+  padding: 2px 7px; border-radius: 3px; font-size: 0.68rem; font-weight: 700;
+  margin-left: 6px; vertical-align: middle;
+}
+
+/* Floor dividers */
+.floor-divider {
+  padding: 8px 16px 4px;
+  font-size: 0.7rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 1px;
+  border-bottom: 1px solid var(--border); margin: 0 16px 0;
+}
+
+/* Submit bar */
+.submit-bar {
+  border-top: 1px solid var(--border);
+  padding: 14px 20px; background: #f7f6f3;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.submit-bar .by-field {
+  display: flex; align-items: center; gap: 8px;
+}
+.submit-bar .by-field label { font-size: 0.78rem; font-weight: 600; color: var(--muted); white-space: nowrap; }
+.submit-bar .by-field input {
+  padding: 6px 10px; border: 1.5px solid var(--border); border-radius: 5px;
+  font-size: 0.82rem; font-family: inherit; width: 160px;
+}
+.submit-bar .totals { font-size: 0.82rem; color: var(--muted); }
+.submit-bar .totals b { color: var(--navy); }
+.btn-submit {
+  padding: 10px 28px; background: var(--gold);
+  border: none; border-radius: 6px;
+  font-size: 0.88rem; font-weight: 800; color: var(--navy);
+  cursor: pointer; transition: all 0.2s; white-space: nowrap;
+}
+.btn-submit:hover  { background: var(--gold2); transform: translateY(-1px); }
+.btn-submit:active { transform: translateY(0); }
+.btn-submit:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; transform: none; }
+
+/* ── Log Table ── */
+.log-controls {
+  display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; align-items: center;
+}
+.log-controls input[type="month"], .log-controls input[type="date"] {
+  padding: 6px 10px; border: 1.5px solid var(--border); border-radius: 5px;
+  font-size: 0.82rem; font-family: inherit;
+}
+.btn-secondary {
+  padding: 7px 16px; background: var(--navy);
+  border: none; border-radius: 5px;
+  font-size: 0.78rem; font-weight: 700; color: var(--white);
+  cursor: pointer; transition: background 0.2s;
+}
+.btn-secondary:hover { background: var(--navy2); }
+.table-wrap { overflow-x: auto; }
+table {
+  width: 100%; border-collapse: collapse; font-size: 0.79rem;
+  background: var(--white); border-radius: var(--radius);
+  overflow: hidden; box-shadow: var(--shadow);
+}
+thead tr { background: var(--navy); color: var(--white); }
+th { padding: 9px 10px; font-weight: 700; text-align: left;
+     font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+td { padding: 8px 10px; border-bottom: 1px solid #f0ede8; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fafaf7; }
+.td-room { font-weight: 800; color: var(--navy); }
+.td-pkr  { text-align: right; font-weight: 600; }
+.td-pkr.zero { color: #c5bfb6; }
+.badge {
+  padding: 2px 7px; border-radius: 3px; font-size: 0.66rem; font-weight: 700;
+  text-transform: uppercase;
+}
+.badge.guest   { background: #e8f5ee; color: var(--green); }
+.badge.staff   { background: #e8f0fe; color: #2563eb; }
+.badge.ff      { background: #fef3e0; color: var(--gold); }
+.badge.other   { background: #f0ede8; color: var(--muted); }
+
+/* ── Toast ── */
+.toast-area { position: fixed; bottom: 20px; right: 20px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+.toast {
+  padding: 12px 18px; border-radius: 7px; font-size: 0.82rem;
+  font-weight: 700; color: var(--white); box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  animation: toastIn 0.3s ease; max-width: 320px;
+}
+.toast.success { background: var(--green); }
+.toast.error   { background: var(--red); }
+.toast.info    { background: var(--navy); }
+@keyframes toastIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* ── Loading ── */
+.spinner {
+  width: 30px; height: 30px; border: 3px solid var(--border);
+  border-top-color: var(--navy); border-radius: 50%;
+  animation: spin 0.7s linear infinite; margin: 30px auto;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-msg { text-align: center; color: var(--muted); font-size: 0.82rem; padding: 20px; }
+
+/* ── Monthly Summary table extras ── */
+.month-totals td { font-weight: 700; background: #f0eee9; }
+.col-date { white-space: nowrap; }
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .header { padding: 0 12px; }
+  .nav-tab { padding: 5px 10px; font-size: 0.72rem; }
+  .container { padding: 12px 12px 60px; }
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+  .field-row { grid-template-columns: 1fr; }
+  .field-row.three { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header class="header">
+  <div class="header-brand">
+    <div class="logo">SI</div>
+    <div>
+      <h1>Samsons Inn</h1>
+      <span>Daily Sales Tracker</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="date-badge" id="headerDate"></div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" data-page="dashboard">Dashboard</button>
+      <button class="nav-tab" data-page="submit">Submit</button>
+      <button class="nav-tab" data-page="log">Log</button>
+      <button class="nav-tab" data-page="summary">Monthly</button>
+    </div>
+  </div>
+</header>
+
+<!-- ── Pages ── -->
+<div class="container">
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="kpi-grid" id="kpiGrid">
+      <div class="loading-msg"><div class="spinner"></div>Loading dashboard…</div>
+    </div>
+    <div class="section-title">Revenue – Last 7 Days</div>
+    <div class="form-card" style="padding:18px 20px 14px;">
+      <div class="bar-chart" id="barChart" style="align-items:flex-end;gap:6px;height:110px;">
+        <div class="loading-msg" style="width:100%">Loading…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUBMIT -->
+  <div class="page" id="page-submit">
+    <div class="form-card">
+      <div class="form-top">
+        <h2>Room Revenue Entry</h2>
+        <div class="date-select">
+          <input type="date" id="submitDate">
+        </div>
+      </div>
+      <div id="roomGrid" class="room-grid">
+        <div class="loading-msg"><div class="spinner"></div>Loading rooms…</div>
+      </div>
+      <div class="submit-bar">
+        <div class="by-field">
+          <label>Submitted by</label>
+          <input type="text" id="submittedBy" placeholder="Your name" value="">
+        </div>
+        <div class="totals" id="liveTotals">—</div>
+        <button class="btn-submit" id="btnSubmit" onclick="submitDay()">Submit Day</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div class="page" id="page-log">
+    <div class="log-controls">
+      <input type="date" id="logDate">
+      <button class="btn-secondary" onclick="loadDayLog()">Load Day</button>
+    </div>
+    <div class="table-wrap">
+      <div id="logTable" class="loading-msg">Select a date above.</div>
+    </div>
+  </div>
+
+  <!-- MONTHLY SUMMARY -->
+  <div class="page" id="page-summary">
+    <div class="log-controls">
+      <input type="month" id="summaryMonth">
+      <button class="btn-secondary" onclick="loadMonthlySummary()">Load</button>
+    </div>
+    <div class="table-wrap">
+      <div id="summaryTable" class="loading-msg">Select a month above.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast area -->
+<div class="toast-area" id="toastArea"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+//  CONFIG  – Replace SCRIPT_URL after deploying GAS
+// ══════════════════════════════════════════════════════════
+const SCRIPT_URL = 'YOUR_APPS_SCRIPT_EXEC_URL_HERE';
+const PIN_HASH   = '1234';   // simple numeric PIN; replace with SHA for production
+
+// ══════════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════════
+let CONFIG = { rooms: [], guestTypes: [], nonCashRates: {} };
+let ROOM_STATES = {};   // roomNum → { occupied, data }
+let DASHBOARD_DATA = null;
+
+// ══════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  setDateFields();
+  setupNavTabs();
+  loadConfig();
+  loadDashboard();
+  document.getElementById('submitDate').addEventListener('change', () => buildRoomGrid());
+});
+
+function setDateFields() {
+  const today = todayISO();
+  document.getElementById('headerDate').textContent = formatDisplayDate(today);
+  document.getElementById('submitDate').value = today;
+  document.getElementById('logDate').value = today;
+  const mo = today.substring(0, 7);
+  document.getElementById('summaryMonth').value = mo;
+}
+
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function pad(n) { return String(n).padStart(2,'0'); }
+function formatDisplayDate(iso) {
+  const [y,m,d] = iso.split('-');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${parseInt(d)} ${months[parseInt(m)-1]} ${y}`;
+}
+function pkr(n) { return 'PKR ' + Number(n||0).toLocaleString(); }
+
+// ══════════════════════════════════════════════════════════
+//  NAV TABS
+// ══════════════════════════════════════════════════════════
+function setupNavTabs() {
+  document.querySelectorAll('.nav-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('page-' + btn.dataset.page).classList.add('active');
+      if (btn.dataset.page === 'dashboard') loadDashboard();
+    });
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+//  GAS FETCH
+// ══════════════════════════════════════════════════════════
+async function gasPost(payload) {
+  const res = await fetch(SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(payload),
+  });
+  return res.json();
+}
+
+// ══════════════════════════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════════════════════════
+async function loadConfig() {
+  try {
+    const r = await gasPost({ action: 'getConfig' });
+    if (r.ok) { CONFIG = r; buildRoomGrid(); }
+    else toast('Config load failed: ' + r.error, 'error');
+  } catch(e) { toast('Network error loading config', 'error'); }
+}
+
+// ══════════════════════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════════════════════
+async function loadDashboard() {
+  const kpi = document.getElementById('kpiGrid');
+  kpi.innerHTML = '<div class="loading-msg"><div class="spinner"></div>Loading dashboard…</div>';
+  try {
+    const r = await gasPost({ action: 'getDashboard' });
+    if (!r.ok) { kpi.innerHTML = '<p style="color:red">Error: ' + r.error + '</p>'; return; }
+    renderDashboard(r);
+  } catch(e) {
+    kpi.innerHTML = '<p style="color:var(--red)">Could not connect to server.</p>';
+  }
+}
+
+function renderDashboard(d) {
+  const t = d.todayRevenue || {};
+  const occ = d.occupancy || {};
+  const mtd = d.mtd || {};
+
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi-card gold">
+      <div class="kpi-label">Today — Cash Revenue</div>
+      <div class="kpi-value pkr">${Number(t.totalCash||0).toLocaleString()}</div>
+      <div class="kpi-sub">Room: ${pkr(t.cashRoom)} · Food: ${pkr(t.cashFood)}</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">Today — Online Revenue</div>
+      <div class="kpi-value pkr">${Number(t.totalOnline||0).toLocaleString()}</div>
+      <div class="kpi-sub">Room: ${pkr(t.onlineRoom)} · Food: ${pkr(t.onlineFood)}</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">Today — Total Guest Revenue</div>
+      <div class="kpi-value pkr">${Number(t.grandTotal||0).toLocaleString()}</div>
+      <div class="kpi-sub">Non-cash (internal): ${pkr(t.nonCashRoom)}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Occupancy Today</div>
+      <div class="kpi-value">${occ.occupied||0} <span style="font-size:0.75em;color:var(--muted)">/ ${occ.total||17}</span></div>
+      <div class="kpi-sub">${Math.round(((occ.occupied||0)/(occ.total||17))*100)}% occupied</div>
+    </div>
+    <div class="kpi-card gold">
+      <div class="kpi-label">MTD Cash + Online</div>
+      <div class="kpi-value pkr">${Number(mtd.total||0).toLocaleString()}</div>
+      <div class="kpi-sub">Non-cash MTD: ${pkr(mtd.nonCash)}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Restaurant Walk-in</div>
+      <div class="kpi-value pkr">${Number(t.restoFood||0).toLocaleString()}</div>
+      <div class="kpi-sub">Company food: ${pkr(t.companyFood)}</div>
+    </div>
+  `;
+
+  // Bar chart
+  const bars = document.getElementById('barChart');
+  const last7 = d.last7 || [];
+  if (!last7.length) { bars.innerHTML = '<div class="loading-msg">No data</div>'; return; }
+  const maxVal = Math.max(...last7.map(x => (x.cashRoom||0)+(x.onlineRoom||0)+(x.food||0)), 1);
+  const today = d.today;
+  bars.innerHTML = last7.map(day => {
+    const total = (day.cashRoom||0)+(day.onlineRoom||0)+(day.food||0);
+    const h = Math.max(Math.round((total/maxVal)*90), 2);
+    const isToday = day.date === today;
+    const label = day.date ? day.date.substring(5) : '';
+    return `
+      <div class="bar-wrap">
+        <div class="bar-val">${total > 0 ? (total/1000).toFixed(0)+'k' : ''}</div>
+        <div class="bar ${isToday?'today-bar':''}" style="height:${h}px" title="${pkr(total)}"></div>
+        <div class="bar-label">${label}</div>
+      </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════
+//  ROOM GRID
+// ══════════════════════════════════════════════════════════
+function buildRoomGrid() {
+  const grid = document.getElementById('roomGrid');
+  if (!CONFIG.rooms || !CONFIG.rooms.length) {
+    grid.innerHTML = '<div class="loading-msg">Waiting for config…</div>'; return;
+  }
+
+  // Define floors
+  const floors = [
+    { label: 'Ground Floor', rooms: ['101','102','103','104','105','106','107'] },
+    { label: 'First Floor',  rooms: ['201','202','203','204','205','206','207'] },
+    { label: 'Basement',     rooms: ['B1','B2'] },
+  ];
+
+  // Known staff rooms (pre-fill as non-cash)
+  const staffRooms = { '105': 'Mr Major Iqbal', '106': 'Shahzad Alam (DGM)', '107': 'Bilal Tariq (SNR Tech)', '201': 'CSR Female' };
+
+  grid.innerHTML = '';
+  ROOM_STATES = {};
+
+  floors.forEach(floor => {
+    const div = document.createElement('div');
+    div.style.cssText = 'grid-column:1/-1; border-bottom:1px solid var(--border); padding:6px 0 2px; margin-bottom:-4px; font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:1px;';
+    div.textContent = floor.label;
+    grid.appendChild(div);
+
+    floor.rooms.forEach(room => {
+      const isStaff = !!staffRooms[room];
+      const defaultName = staffRooms[room] || '';
+      const rate = CONFIG.nonCashRates?.['Staff – NonCash'] || 2000;
+
+      ROOM_STATES[room] = {
+        occupied: isStaff,
+        isStaff,
+        data: {
+          room, guestName: defaultName, pax: isStaff ? 1 : 0,
+          contact: '', guestType: isStaff ? 'Staff – NonCash' : '',
+          comments: '',
+          cashRoom: 0, onlineRoom: 0, nonCashRoom: isStaff ? rate : 0,
+          cashFood: 0, onlineFood: 0, companyFood: 0, restoFood: 0,
+        }
+      };
+
+      const card = document.createElement('div');
+      card.className = 'room-card' + (isStaff ? ' staff' : '');
+      card.id = 'room-card-' + room;
+      card.innerHTML = buildRoomCard(room, isStaff, defaultName, rate);
+      grid.appendChild(card);
+
+      if (isStaff) {
+        card.querySelector('.room-body').classList.add('visible');
+      }
+    });
+  });
+
+  updateLiveTotals();
+}
+
+function buildRoomCard(room, isStaff, defaultName, rate) {
+  const types = CONFIG.guestTypes || [];
+  const typeOptions = types.map(t => `<option value="${t}"${t === (isStaff ? 'Staff – NonCash' : '')?' selected':''}>${t}</option>`).join('');
+
+  return `
+    <div class="room-header ${isStaff ? 'staff' : ''}" onclick="toggleRoom('${room}')">
+      <span class="room-num ${isStaff ? 'staff-room' : ''}">${room}</span>
+      <span class="room-status ${isStaff ? 'staff-s' : ''}" id="status-${room}">${isStaff ? 'STAFF' : 'VACANT'}</span>
+      <button class="room-toggle ${isStaff ? 'staff-on' : ''}" id="toggle-${room}" onclick="event.stopPropagation();toggleRoom('${room}')"></button>
+    </div>
+    <div class="room-body" id="body-${room}">
+      <div class="field-row">
+        <div class="field">
+          <label>Guest / Occupant Name</label>
+          <input type="text" id="name-${room}" value="${defaultName}" oninput="updateField('${room}','guestName',this.value)">
+        </div>
+        <div class="field">
+          <label>Pax</label>
+          <input type="number" id="pax-${room}" value="${isStaff?1:1}" min="1" max="10" style="width:70px"
+                 oninput="updateField('${room}','pax',parseInt(this.value)||1)">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Contact</label>
+          <input type="text" id="contact-${room}" oninput="updateField('${room}','contact',this.value)" placeholder="03xx">
+        </div>
+        <div class="field">
+          <label>Guest Type</label>
+          <select id="type-${room}" onchange="onTypeChange('${room}',this.value)">
+            <option value="">— Select —</option>${typeOptions}
+          </select>
+        </div>
+      </div>
+      <div class="field-row full">
+        <div class="field">
+          <label>Comments</label>
+          <input type="text" id="comments-${room}" oninput="updateField('${room}','comments',this.value)" placeholder="Optional">
+        </div>
+      </div>
+
+      <div style="margin-top:8px;">
+        <div class="money-label">Room Revenue</div>
+        <div class="money-group" style="margin-bottom:8px">
+          <div class="field">
+            <label>Cash (PKR)</label>
+            <input type="number" class="money" id="cashRoom-${room}" value="${isStaff?'':0}" min="0" step="500"
+                   oninput="updateNum('${room}','cashRoom',this.value)">
+          </div>
+          <div class="field">
+            <label>Online (PKR)</label>
+            <input type="number" class="money" id="onlineRoom-${room}" value="0" min="0" step="500"
+                   oninput="updateNum('${room}','onlineRoom',this.value)">
+          </div>
+        </div>
+        <div id="noncash-row-${room}" style="${isStaff?'':'display:none'}">
+          <div class="field" style="margin-bottom:8px">
+            <label>Non-Cash Room Rate <span class="noncash-badge">INTERNAL</span></label>
+            <input type="number" class="money" id="nonCashRoom-${room}" value="${isStaff?rate:0}" min="0" step="500"
+                   oninput="updateNum('${room}','nonCashRoom',this.value)">
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="money-label">Food Revenue</div>
+        <div class="field-row three" style="margin-bottom:0">
+          <div class="field">
+            <label>Cash Food</label>
+            <input type="number" class="money" id="cashFood-${room}" value="0" min="0" step="100"
+                   oninput="updateNum('${room}','cashFood',this.value)">
+          </div>
+          <div class="field">
+            <label>Online Food</label>
+            <input type="number" class="money" id="onlineFood-${room}" value="0" min="0" step="100"
+                   oninput="updateNum('${room}','onlineFood',this.value)">
+          </div>
+          <div class="field">
+            <label>Company Food</label>
+            <input type="number" class="money" id="companyFood-${room}" value="0" min="0" step="100"
+                   oninput="updateNum('${room}','companyFood',this.value)">
+          </div>
+        </div>
+        <div class="field" style="margin-top:6px">
+          <label>Restaurant Walk-in Only</label>
+          <input type="number" class="money" id="restoFood-${room}" value="0" min="0" step="100"
+                 oninput="updateNum('${room}','restoFood',this.value)">
+        </div>
+      </div>
+    </div>`;
+}
+
+function toggleRoom(room) {
+  const state = ROOM_STATES[room];
+  state.occupied = !state.occupied;
+  const card   = document.getElementById('room-card-' + room);
+  const header = card.querySelector('.room-header');
+  const body   = document.getElementById('body-' + room);
+  const toggle = document.getElementById('toggle-' + room);
+  const status = document.getElementById('status-' + room);
+
+  card.className   = 'room-card' + (state.occupied ? (state.isStaff ? ' staff' : ' occupied') : '');
+  header.className = 'room-header' + (state.occupied ? (state.isStaff ? ' staff' : ' occupied') : '');
+  body.classList.toggle('visible', state.occupied);
+  toggle.className = 'room-toggle' + (state.occupied ? (state.isStaff ? ' staff-on' : ' on') : '');
+  status.className = 'room-status' + (state.occupied ? (state.isStaff ? ' staff-s' : ' occ') : '');
+  status.textContent = state.occupied ? (state.isStaff ? 'STAFF' : 'OCCUPIED') : 'VACANT';
+
+  if (!state.occupied) {
+    // Reset to zero when closed (unless staff room)
+    if (!state.isStaff) {
+      ['cashRoom','onlineRoom','nonCashRoom','cashFood','onlineFood','companyFood','restoFood'].forEach(f => {
+        state.data[f] = 0;
+        const el = document.getElementById(f + '-' + room);
+        if (el) el.value = 0;
+      });
+    }
+  }
+  updateLiveTotals();
+}
+
+function updateField(room, field, val) {
+  ROOM_STATES[room].data[field] = val;
+}
+
+function updateNum(room, field, val) {
+  ROOM_STATES[room].data[field] = parseFloat(val) || 0;
+  updateLiveTotals();
+}
+
+function onTypeChange(room, type) {
+  ROOM_STATES[room].data.guestType = type;
+  const rate = CONFIG.nonCashRates?.[type] || 0;
+  const isNonCash = rate > 0;
+  const noncashRow = document.getElementById('noncash-row-' + room);
+
+  if (isNonCash) {
+    noncashRow.style.display = '';
+    const el = document.getElementById('nonCashRoom-' + room);
+    el.value = rate;
+    ROOM_STATES[room].data.nonCashRoom = rate;
+    // Clear cash fields
+    ['cashRoom','onlineRoom'].forEach(f => {
+      document.getElementById(f+'-'+room).value = 0;
+      ROOM_STATES[room].data[f] = 0;
+    });
+  } else {
+    noncashRow.style.display = 'none';
+    ROOM_STATES[room].data.nonCashRoom = 0;
+    document.getElementById('nonCashRoom-' + room).value = 0;
+  }
+  updateLiveTotals();
+}
+
+function updateLiveTotals() {
+  let totalCash = 0, totalOnline = 0, occupied = 0;
+  Object.values(ROOM_STATES).forEach(s => {
+    if (!s.occupied) return;
+    occupied++;
+    totalCash   += (s.data.cashRoom||0) + (s.data.cashFood||0);
+    totalOnline += (s.data.onlineRoom||0) + (s.data.onlineFood||0);
+  });
+  document.getElementById('liveTotals').innerHTML =
+    `<b>${occupied}</b> rooms · Cash: <b>${pkr(totalCash)}</b> · Online: <b>${pkr(totalOnline)}</b>`;
+}
+
+// ══════════════════════════════════════════════════════════
+//  SUBMIT
+// ══════════════════════════════════════════════════════════
+async function submitDay() {
+  const date = document.getElementById('submitDate').value;
+  const submittedBy = document.getElementById('submittedBy').value.trim() || 'Portal User';
+  const btn  = document.getElementById('btnSubmit');
+
+  if (!date) { toast('Please select a date', 'error'); return; }
+
+  const entries = Object.values(ROOM_STATES)
+    .filter(s => s.occupied)
+    .map(s => s.data);
+
+  if (!entries.length) { toast('No rooms are marked as occupied', 'error'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
+
+  try {
+    const r = await gasPost({ action: 'submitDay', date, entries, submittedBy });
+    if (r.ok) {
+      toast(`✓ Submitted ${r.written?.length || entries.length} rooms for ${formatDisplayDate(date)}`, 'success');
+      btn.textContent = '✓ Submitted';
+      setTimeout(() => { btn.disabled = false; btn.textContent = 'Submit Day'; }, 3000);
+    } else {
+      toast('Error: ' + r.error, 'error');
+      btn.disabled = false; btn.textContent = 'Submit Day';
+    }
+  } catch(e) {
+    toast('Network error. Check connection.', 'error');
+    btn.disabled = false; btn.textContent = 'Submit Day';
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  LOG
+// ══════════════════════════════════════════════════════════
+async function loadDayLog() {
+  const date  = document.getElementById('logDate').value;
+  const table = document.getElementById('logTable');
+  if (!date) { toast('Select a date', 'error'); return; }
+
+  table.innerHTML = '<div class="loading-msg"><div class="spinner"></div>Loading…</div>';
+
+  try {
+    const r = await gasPost({ action: 'getDayLog', date });
+    if (!r.ok) { table.innerHTML = `<p style="color:red">${r.error}</p>`; return; }
+    if (!r.entries.length) {
+      table.innerHTML = `<p class="loading-msg">No entries for ${formatDisplayDate(date)}</p>`; return;
+    }
+    renderLogTable(r.entries, table);
+  } catch(e) {
+    table.innerHTML = '<p style="color:var(--red)">Network error</p>';
+  }
+}
+
+function renderLogTable(entries, container) {
+  const cols = [
+    ['Room','Room'],['Guest_Name','Guest'],['Pax','Pax'],['Guest_Type','Type'],
+    ['Cash_Room','Cash Room'],['Online_Room','Online Room'],['NonCash_Room','NonCash Room'],
+    ['Cash_Food','Cash Food'],['Online_Food','Online Food'],['Company_Food','Co. Food'],
+    ['Resto_Food','Resto Food'],['Comments','Comments'],
+  ];
+  const pkrCols = new Set(['Cash_Room','Online_Room','NonCash_Room','Cash_Food','Online_Food','Company_Food','Resto_Food']);
+
+  let html = `<table><thead><tr>${cols.map(([,h]) => `<th>${h}</th>`).join('')}</tr></thead><tbody>`;
+  entries.forEach(row => {
+    html += '<tr>' + cols.map(([k, h]) => {
+      const val = row[k] ?? '';
+      if (k === 'Room') return `<td class="td-room">${val}</td>`;
+      if (pkrCols.has(k)) {
+        const n = parseFloat(val) || 0;
+        return `<td class="td-pkr ${n===0?'zero':''}">${n>0 ? Number(n).toLocaleString() : '—'}</td>`;
+      }
+      if (k === 'Guest_Type') {
+        const c = val.includes('NonCash') || val.includes('Staff') || val.includes('Intern') ? 'staff'
+                : val.includes('F&F') ? 'ff' : val ? 'guest' : 'other';
+        return `<td><span class="badge ${c}">${val||'—'}</span></td>`;
+      }
+      return `<td>${val||'—'}</td>`;
+    }).join('') + '</tr>';
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════
+//  MONTHLY SUMMARY
+// ══════════════════════════════════════════════════════════
+async function loadMonthlySummary() {
+  const month = document.getElementById('summaryMonth').value;
+  const div   = document.getElementById('summaryTable');
+  if (!month) { toast('Select a month', 'error'); return; }
+
+  div.innerHTML = '<div class="loading-msg"><div class="spinner"></div>Loading…</div>';
+
+  try {
+    const r = await gasPost({ action: 'getMonthlySummary', month });
+    if (!r.ok) { div.innerHTML = `<p style="color:red">${r.error}</p>`; return; }
+    if (!r.rows.length) { div.innerHTML = `<p class="loading-msg">No data for ${month}</p>`; return; }
+    renderSummaryTable(r.rows, div);
+  } catch(e) {
+    div.innerHTML = '<p style="color:var(--red)">Network error</p>';
+  }
+}
+
+function renderSummaryTable(rows, container) {
+  const cols = [
+    ['Date','Date'],['Cash_Room','Cash Room'],['Online_Room','Online Room'],['NonCash_Room','NonCash Rm'],
+    ['Cash_Food','Cash Food'],['Online_Food','Online Food'],['Company_Food','Co. Food'],
+    ['Resto_Food','Resto'],['Total_Revenue','Total Revenue'],['Total_NonCash','Total NonCash'],
+    ['Rooms_Occupied','Occ'],
+  ];
+  const pkrCols = new Set(['Cash_Room','Online_Room','NonCash_Room','Cash_Food','Online_Food','Company_Food','Resto_Food','Total_Revenue','Total_NonCash']);
+
+  // Compute totals
+  const totals = {};
+  cols.forEach(([k]) => totals[k] = 0);
+  rows.forEach(row => cols.forEach(([k]) => totals[k] += parseFloat(row[k])||0));
+
+  let html = `<table><thead><tr>${cols.map(([,h]) => `<th>${h}</th>`).join('')}</tr></thead><tbody>`;
+  rows.forEach(row => {
+    html += '<tr>' + cols.map(([k]) => {
+      if (k === 'Date') return `<td class="col-date">${row[k]||''}</td>`;
+      if (k === 'Rooms_Occupied') return `<td style="text-align:center">${parseInt(row[k])||0}</td>`;
+      if (pkrCols.has(k)) {
+        const n = parseFloat(row[k])||0;
+        return `<td class="td-pkr ${n===0?'zero':''}">${n>0?Number(n).toLocaleString():'—'}</td>`;
+      }
+      return `<td>${row[k]||''}</td>`;
+    }).join('') + '</tr>';
+  });
+
+  // Totals row
+  html += '<tr class="month-totals"><td><b>TOTAL</b></td>' + cols.slice(1).map(([k]) => {
+    if (k === 'Rooms_Occupied') return `<td style="text-align:center">—</td>`;
+    if (pkrCols.has(k)) return `<td class="td-pkr"><b>${Number(totals[k]).toLocaleString()}</b></td>`;
+    return `<td>—</td>`;
+  }).join('') + '</tr>';
+
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════════════════════════
+function toast(msg, type = 'info') {
+  const area = document.getElementById('toastArea');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  area.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+</script>
+</body>
+</html>
