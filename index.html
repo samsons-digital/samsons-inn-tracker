@@ -408,7 +408,75 @@ tr:hover td { background: #fafaf7; }
 .col-date { white-space: nowrap; }
 
 /* ── Responsive ── */
-@media (max-width: 640px) {
+/* ── Config ── */
+.cfg-gate-card {
+  max-width: 380px; margin: 60px auto; background: var(--white);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: 40px 36px; text-align: center;
+}
+.cfg-gate-icon  { font-size: 2.4rem; margin-bottom: 12px; }
+.cfg-gate-title { font-size: 1.1rem; font-weight: 800; color: var(--navy); margin-bottom: 6px; }
+.cfg-gate-sub   { font-size: 0.8rem; color: var(--muted); margin-bottom: 24px; }
+.cfg-pin-row    { display: flex; gap: 10px; justify-content: center; }
+.cfg-pin-input  {
+  width: 120px; padding: 10px 14px; border: 2px solid var(--border);
+  border-radius: 6px; font-size: 1.1rem; text-align: center;
+  letter-spacing: 6px; font-family: inherit;
+  transition: border-color 0.2s;
+}
+.cfg-pin-input:focus { outline: none; border-color: var(--navy); }
+.cfg-pin-error  { color: var(--red); font-size: 0.78rem; margin-top: 10px; min-height: 18px; font-weight: 600; }
+
+.cfg-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.cfg-card {
+  background: var(--white); border-radius: var(--radius);
+  box-shadow: var(--shadow); overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.cfg-card-header { padding: 16px 20px 12px; border-bottom: 1px solid var(--border); }
+.cfg-card-title  { font-size: 0.88rem; font-weight: 800; color: var(--navy); margin-bottom: 3px; }
+.cfg-card-sub    { font-size: 0.72rem; color: var(--muted); }
+.cfg-card-footer {
+  padding: 12px 20px; background: #f7f6f3;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+}
+.cfg-save-msg { font-size: 0.75rem; font-weight: 700; }
+.cfg-save-msg.ok  { color: var(--green); }
+.cfg-save-msg.err { color: var(--red); }
+
+/* Editable rate/price rows */
+.cfg-rows { padding: 12px 20px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.cfg-row  {
+  display: flex; align-items: center;
+  gap: 10px; padding: 8px 0;
+  border-bottom: 1px solid #f0ede8;
+}
+.cfg-row:last-child { border-bottom: none; }
+.cfg-row-label { flex: 1; font-size: 0.82rem; font-weight: 600; color: var(--navy); }
+.cfg-row-input {
+  width: 110px; padding: 6px 10px; border: 1.5px solid var(--border);
+  border-radius: 5px; font-size: 0.82rem; font-family: inherit;
+  text-align: right; font-weight: 700; color: var(--navy);
+  transition: border-color 0.2s;
+}
+.cfg-row-input:focus { outline: none; border-color: var(--navy); }
+.cfg-row-unit { font-size: 0.72rem; color: var(--muted); width: 28px; }
+
+/* Guest type / room badges in config */
+.cfg-badge-wrap { padding: 14px 20px; display: flex; flex-wrap: wrap; gap: 8px; flex: 1; }
+.cfg-badge {
+  padding: 4px 10px; background: var(--cream); border: 1px solid var(--border);
+  border-radius: 4px; font-size: 0.76rem; font-weight: 600; color: var(--navy);
+}
+.cfg-badge.room { background: #e8f0fe; border-color: #b8d0f8; color: #2563eb; }
+
+@media (max-width: 768px) {
+  .cfg-grid { grid-template-columns: 1fr; }
+}
   .header { padding: 0 12px; }
   .nav-tab { padding: 10px 14px; font-size: 0.68rem; }
   .container { padding: 12px 12px 60px; }
@@ -441,6 +509,7 @@ tr:hover td { background: #fafaf7; }
     <button class="nav-tab" data-page="submit">Submit</button>
     <button class="nav-tab" data-page="log">Log</button>
     <button class="nav-tab" data-page="summary">Monthly</button>
+    <button class="nav-tab" data-page="config">Config</button>
   </div>
 </nav>
 
@@ -549,16 +618,100 @@ tr:hover td { background: #fafaf7; }
     </div>
   </div>
 
-</div>
+  <!-- CONFIG -->
+  <div class="page" id="page-config">
 
-<!-- Toast area -->
+    <!-- PIN Gate -->
+    <div id="cfg-pin-gate">
+      <div class="cfg-gate-card">
+        <div class="cfg-gate-icon">⚙</div>
+        <div class="cfg-gate-title">Configuration Panel</div>
+        <div class="cfg-gate-sub">Enter the admin PIN to access settings</div>
+        <div class="cfg-pin-row">
+          <input type="password" id="cfgPinInput" class="cfg-pin-input"
+                 maxlength="6" placeholder="• • • •"
+                 onkeydown="if(event.key==='Enter') unlockConfig()">
+          <button class="btn-submit" onclick="unlockConfig()">Unlock</button>
+        </div>
+        <div id="cfgPinError" class="cfg-pin-error"></div>
+      </div>
+    </div>
+
+    <!-- Config Panel (hidden until PIN unlocked) -->
+    <div id="cfg-panel" style="display:none">
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <div>
+          <div class="section-title" style="margin-bottom:2px">Configuration Panel</div>
+          <div style="font-size:0.75rem;color:var(--muted)">Changes save immediately to Google Sheets</div>
+        </div>
+        <button class="btn-secondary" onclick="lockConfig()" style="background:var(--muted)">Lock</button>
+      </div>
+
+      <div class="cfg-grid">
+
+        <!-- Non-Cash Room Rates -->
+        <div class="cfg-card">
+          <div class="cfg-card-header">
+            <div class="cfg-card-title">Non-Cash Room Rates</div>
+            <div class="cfg-card-sub">Internal rates charged to company accounts (PKR / night)</div>
+          </div>
+          <div id="cfgRatesBody"><div class="loading-msg"><div class="spinner"></div></div></div>
+          <div class="cfg-card-footer">
+            <button class="btn-submit" onclick="saveSection('rates')">Save Rates</button>
+            <span class="cfg-save-msg" id="ratesSaveMsg"></span>
+          </div>
+        </div>
+
+        <!-- Food Prices -->
+        <div class="cfg-card">
+          <div class="cfg-card-header">
+            <div class="cfg-card-title">Food Price Reference</div>
+            <div class="cfg-card-sub">Standard menu prices (PKR) — used as reference when entering food revenue</div>
+          </div>
+          <div id="cfgFoodBody"><div class="loading-msg"><div class="spinner"></div></div></div>
+          <div class="cfg-card-footer">
+            <button class="btn-submit" onclick="saveSection('food')">Save Prices</button>
+            <span class="cfg-save-msg" id="foodSaveMsg"></span>
+          </div>
+        </div>
+
+        <!-- Guest Types (read-only display) -->
+        <div class="cfg-card">
+          <div class="cfg-card-header">
+            <div class="cfg-card-title">Guest Types</div>
+            <div class="cfg-card-sub">Dropdown values used in the Submit form. Edit directly in Google Sheets Config tab to add/remove.</div>
+          </div>
+          <div id="cfgTypesBody"><div class="loading-msg"><div class="spinner"></div></div></div>
+          <div class="cfg-card-footer" style="color:var(--muted);font-size:0.75rem">
+            Read-only — edit in Google Sheets → Config tab → GUEST_TYPES section
+          </div>
+        </div>
+
+        <!-- Rooms (read-only display) -->
+        <div class="cfg-card">
+          <div class="cfg-card-header">
+            <div class="cfg-card-title">Rooms</div>
+            <div class="cfg-card-sub">17 rooms tracked. Edit in Google Sheets Config tab to add/remove rooms.</div>
+          </div>
+          <div id="cfgRoomsBody"><div class="loading-msg"><div class="spinner"></div></div></div>
+          <div class="cfg-card-footer" style="color:var(--muted);font-size:0.75rem">
+            Read-only — edit in Google Sheets → Config tab → ROOMS section
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
 <div class="toast-area" id="toastArea"></div>
 
 <script>
 // ══════════════════════════════════════════════════════════
 //  CONFIG  – Replace SCRIPT_URL after deploying GAS
 // ══════════════════════════════════════════════════════════
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw8dVmQ0XHWhyodgHYziGa9kPZWM8aOanynrHZQBMLznWIWCS3LaeTH6RJWxTVA8CP-/exec';
+const SCRIPT_URL = 'YOUR_APPS_SCRIPT_EXEC_URL_HERE';
 const PIN_HASH   = '1234';   // simple numeric PIN; replace with SHA for production
 
 // ══════════════════════════════════════════════════════════
@@ -611,6 +764,12 @@ function setupNavTabs() {
       btn.classList.add('active');
       document.getElementById('page-' + btn.dataset.page).classList.add('active');
       if (btn.dataset.page === 'dashboard') loadDashboard();
+      if (btn.dataset.page === 'config' && !cfgUnlocked) {
+        document.getElementById('cfg-pin-gate').style.display = 'block';
+        document.getElementById('cfg-panel').style.display    = 'none';
+        document.getElementById('cfgPinInput').value = '';
+        document.getElementById('cfgPinError').textContent = '';
+      }
     });
   });
 }
@@ -1238,6 +1397,136 @@ function toast(msg, type = 'info') {
   t.textContent = msg;
   area.appendChild(t);
   setTimeout(() => t.remove(), 4000);
+}
+
+// ══════════════════════════════════════════════════════════
+//  CONFIG TAB
+// ══════════════════════════════════════════════════════════
+const CONFIG_PIN = '1234';
+let cfgUnlocked  = false;
+let cfgData      = null;   // cached config from server
+
+function unlockConfig() {
+  const pin = document.getElementById('cfgPinInput').value.trim();
+  const err = document.getElementById('cfgPinError');
+  if (pin !== CONFIG_PIN) {
+    err.textContent = 'Incorrect PIN. Please try again.';
+    document.getElementById('cfgPinInput').value = '';
+    return;
+  }
+  err.textContent = '';
+  cfgUnlocked = true;
+  document.getElementById('cfg-pin-gate').style.display = 'none';
+  document.getElementById('cfg-panel').style.display    = 'block';
+  loadConfigPanel();
+}
+
+function lockConfig() {
+  cfgUnlocked = false;
+  document.getElementById('cfg-pin-gate').style.display = 'block';
+  document.getElementById('cfg-panel').style.display    = 'none';
+  document.getElementById('cfgPinInput').value = '';
+}
+
+async function loadConfigPanel() {
+  try {
+    const r = await gasPost({ action: 'getConfig' });
+    if (!r.ok) { toast('Config load failed: ' + r.error, 'error'); return; }
+    cfgData = r;
+    renderConfigPanel(r);
+  } catch(e) { toast('Network error loading config', 'error'); }
+}
+
+function renderConfigPanel(r) {
+  // ── Non-cash rates ──
+  const rates = r.nonCashRates || {};
+  document.getElementById('cfgRatesBody').innerHTML =
+    `<div class="cfg-rows">${
+      Object.entries(rates).map(([label, val]) => `
+        <div class="cfg-row">
+          <div class="cfg-row-label">${label}</div>
+          <input type="number" class="cfg-row-input" id="rate_${sanitizeId(label)}"
+                 value="${val}" min="0" step="100">
+          <span class="cfg-row-unit">PKR</span>
+        </div>`).join('')
+    }</div>`;
+
+  // ── Food prices ──
+  const food = r.foodPrices || {};
+  document.getElementById('cfgFoodBody').innerHTML =
+    `<div class="cfg-rows">${
+      Object.entries(food).map(([label, val]) => `
+        <div class="cfg-row">
+          <div class="cfg-row-label">${label}</div>
+          <input type="number" class="cfg-row-input" id="food_${sanitizeId(label)}"
+                 value="${val}" min="0" step="50">
+          <span class="cfg-row-unit">PKR</span>
+        </div>`).join('')
+    }</div>`;
+
+  // ── Guest types (read-only) ──
+  const types = r.guestTypes || [];
+  document.getElementById('cfgTypesBody').innerHTML =
+    `<div class="cfg-badge-wrap">${
+      types.map(t => `<span class="cfg-badge">${t}</span>`).join('')
+    }</div>`;
+
+  // ── Rooms (read-only) ──
+  const rooms = r.rooms || [];
+  document.getElementById('cfgRoomsBody').innerHTML =
+    `<div class="cfg-badge-wrap">${
+      rooms.map(rm => `<span class="cfg-badge room">${rm}</span>`).join('')
+    }</div>`;
+}
+
+async function saveSection(section) {
+  if (!cfgData) return;
+  const msgEl = document.getElementById(section === 'rates' ? 'ratesSaveMsg' : 'foodSaveMsg');
+  msgEl.textContent = 'Saving…';
+  msgEl.className = 'cfg-save-msg';
+
+  const keyPrefix = section === 'rates' ? 'rate_' : 'food_';
+  const sourceObj = section === 'rates' ? (cfgData.nonCashRates||{}) : (cfgData.foodPrices||{});
+
+  const updated = {};
+  Object.keys(sourceObj).forEach(label => {
+    const el = document.getElementById(keyPrefix + sanitizeId(label));
+    if (el) updated[label] = parseFloat(el.value) || 0;
+  });
+
+  const payload = {
+    action:   'saveConfig',
+    pin:      CONFIG_PIN,
+    savedBy:  document.getElementById('submittedBy')?.value || 'Config Panel',
+    nonCashRates: section === 'rates' ? updated : (cfgData.nonCashRates || {}),
+    foodPrices:   section === 'food'  ? updated : (cfgData.foodPrices   || {}),
+  };
+
+  try {
+    const r = await gasPost(payload);
+    if (r.ok) {
+      // Update local cache
+      if (section === 'rates') cfgData.nonCashRates = updated;
+      else                      cfgData.foodPrices   = updated;
+      // Also update the global CONFIG used by Submit form
+      if (section === 'rates') CONFIG.nonCashRates = updated;
+
+      msgEl.textContent = '✓ Saved';
+      msgEl.className   = 'cfg-save-msg ok';
+      toast('Config saved successfully', 'success');
+    } else {
+      msgEl.textContent = '✗ ' + r.error;
+      msgEl.className   = 'cfg-save-msg err';
+    }
+  } catch(e) {
+    msgEl.textContent = '✗ Network error';
+    msgEl.className   = 'cfg-save-msg err';
+  }
+  setTimeout(() => { msgEl.textContent = ''; }, 4000);
+}
+
+function sanitizeId(str) {
+  return str.replace(/[^a-zA-Z0-9]/g, '_');
 }
 </script>
 </body>
