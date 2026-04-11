@@ -37,8 +37,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 58px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  height: 56px;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.08);
   position: sticky; top: 0; z-index: 100;
 }
 .header-brand { display: flex; align-items: center; gap: 12px; }
@@ -56,27 +56,48 @@ body {
   padding: 4px 12px; border-radius: 20px; font-size: 0.78rem;
   font-weight: 600; border: 1px solid rgba(255,255,255,0.15);
 }
+
+/* ── Tab Bar (below header) ── */
+.tab-bar {
+  background: var(--navy2);
+  border-bottom: 2px solid rgba(200,146,46,0.3);
+  position: sticky; top: 56px; z-index: 99;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
 .nav-tabs {
-  display: flex; gap: 2px;
-  background: rgba(255,255,255,0.08); border-radius: 6px; padding: 3px;
+  display: flex; gap: 0;
+  max-width: 1100px; margin: 0 auto;
+  padding: 0 20px;
 }
 .nav-tab {
-  padding: 5px 14px; border-radius: 4px; font-size: 0.78rem;
-  font-weight: 600; cursor: pointer; color: rgba(255,255,255,0.65);
-  border: none; background: transparent; transition: all 0.2s;
+  padding: 11px 22px; font-size: 0.8rem;
+  font-weight: 700; cursor: pointer;
+  color: rgba(255,255,255,0.5);
+  border: none; background: transparent;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s; letter-spacing: 0.3px;
+  text-transform: uppercase; font-size: 0.73rem;
+  margin-bottom: -2px;
 }
-.nav-tab.active { background: var(--gold); color: var(--navy); }
-.nav-tab:hover:not(.active) { color: var(--white); background: rgba(255,255,255,0.12); }
+.nav-tab.active {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+  background: rgba(200,146,46,0.08);
+}
+.nav-tab:hover:not(.active) {
+  color: rgba(255,255,255,0.85);
+  background: rgba(255,255,255,0.05);
+}
 
 /* ── Layout ── */
-.container { max-width: 1100px; margin: 0 auto; padding: 20px 20px 60px; }
+.container { max-width: 1100px; margin: 0 auto; padding: 24px 20px 60px; }
 .page { display: none; }
 .page.active { display: block; }
 
 /* ── Dashboard ── */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 14px; margin-bottom: 24px;
 }
 .kpi-card {
@@ -87,29 +108,113 @@ body {
 .kpi-card.gold  { border-left-color: var(--gold); }
 .kpi-card.green { border-left-color: var(--green); }
 .kpi-card.blue  { border-left-color: var(--blue); }
-.kpi-label { font-size: 0.72rem; font-weight: 700; color: var(--muted);
+.kpi-card.red   { border-left-color: var(--red); }
+.kpi-label { font-size: 0.7rem; font-weight: 700; color: var(--muted);
              text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
 .kpi-value { font-size: 1.45rem; font-weight: 800; color: var(--navy); line-height: 1; }
-.kpi-value.pkr::before { content: 'PKR '; font-size: 0.7em; font-weight: 600; color: var(--muted); }
-.kpi-sub   { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+.kpi-value.pkr::before { content: 'PKR '; font-size: 0.65em; font-weight: 600; color: var(--muted); }
+.kpi-value.pct::after  { content: '%';   font-size: 0.65em; font-weight: 600; color: var(--muted); }
+.kpi-sub { font-size: 0.7rem; color: var(--muted); margin-top: 5px; }
+.kpi-trend {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 0.68rem; font-weight: 700; margin-top: 4px;
+  padding: 2px 6px; border-radius: 3px;
+}
+.kpi-trend.up   { background: #e6f4ec; color: var(--green); }
+.kpi-trend.down { background: #fdecea; color: var(--red); }
+.kpi-trend.flat { background: #f0ede8; color: var(--muted); }
+
+/* Occupancy bar */
+.occ-bar-wrap { margin-top: 8px; }
+.occ-bar-track {
+  height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;
+}
+.occ-bar-fill {
+  height: 100%; background: var(--gold); border-radius: 3px;
+  transition: width 0.6s ease;
+}
 
 .section-title {
-  font-size: 0.85rem; font-weight: 700; color: var(--navy);
-  text-transform: uppercase; letter-spacing: 0.6px;
-  margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+  font-size: 0.78rem; font-weight: 700; color: var(--navy);
+  text-transform: uppercase; letter-spacing: 0.7px;
+  margin-bottom: 14px; display: flex; align-items: center; gap: 10px;
 }
-.section-title::after {
-  content: ''; flex: 1; height: 1px; background: var(--border);
-}
+.section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-/* Chart bars */
-.bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 100px; }
+/* ── Two-column dashboard layout ── */
+.dash-row {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 16px; margin-bottom: 20px;
+}
+.dash-row.three { grid-template-columns: 2fr 1fr 1fr; }
+.dash-card {
+  background: var(--white); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 18px 20px;
+}
+.dash-card.full { grid-column: 1 / -1; }
+
+/* 7-day bar chart */
+.bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 110px; }
 .bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.bar { width: 100%; background: var(--navy); border-radius: 3px 3px 0 0; min-height: 3px;
-       transition: height 0.4s; position: relative; }
+.bar-stack { width: 100%; display: flex; flex-direction: column; justify-content: flex-end; }
+.bar-seg { width: 100%; transition: height 0.5s ease; min-height: 0; border-radius: 2px 2px 0 0; }
+.bar-seg.room-seg { background: var(--navy); }
+.bar-seg.food-seg { background: var(--gold); opacity: 0.75; border-radius: 0; }
 .bar.today-bar { background: var(--gold); }
-.bar-label { font-size: 0.65rem; color: var(--muted); white-space: nowrap; }
-.bar-val   { font-size: 0.64rem; color: var(--navy); font-weight: 700; }
+.bar-label { font-size: 0.62rem; color: var(--muted); white-space: nowrap; }
+.bar-val   { font-size: 0.62rem; color: var(--navy); font-weight: 700; }
+
+/* Monthly history chart */
+.month-bar-chart { display: flex; align-items: flex-end; gap: 4px; height: 90px; overflow: hidden; }
+.month-bar-wrap  { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.month-bar { width: 100%; background: var(--navy); border-radius: 2px 2px 0 0; min-height: 2px; transition: height 0.5s; }
+.month-bar.cur { background: var(--gold); }
+.month-bar-label { font-size: 0.56rem; color: var(--muted); white-space: nowrap; overflow: hidden; }
+
+/* Top rooms table */
+.room-rank { display: flex; flex-direction: column; gap: 8px; }
+.room-rank-row {
+  display: flex; align-items: center; gap: 10px;
+}
+.room-rank-num {
+  width: 28px; height: 28px; border-radius: 6px; background: var(--navy);
+  color: var(--white); font-size: 0.72rem; font-weight: 800;
+  display: grid; place-items: center; flex-shrink: 0;
+}
+.room-rank-num.r1 { background: var(--gold); color: var(--navy); }
+.room-rank-num.r2 { background: #a0a0a0; }
+.room-rank-num.r3 { background: #b87333; }
+.room-rank-bar-wrap { flex: 1; }
+.room-rank-label { font-size: 0.72rem; font-weight: 700; color: var(--navy); margin-bottom: 3px; }
+.room-rank-track { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.room-rank-fill  { height: 100%; background: var(--navy); border-radius: 3px; transition: width 0.6s; }
+.room-rank-val   { font-size: 0.68rem; color: var(--muted); font-weight: 600; white-space: nowrap; }
+
+/* Food vs Room donut-style split */
+.split-row { display: flex; gap: 10px; margin-top: 8px; }
+.split-item { flex: 1; text-align: center; }
+.split-pct  { font-size: 1.6rem; font-weight: 800; color: var(--navy); line-height: 1; }
+.split-lbl  { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+.split-bar-track { height: 8px; background: var(--border); border-radius: 4px; margin-top: 8px; overflow: hidden; }
+.split-bar-room  { height: 100%; background: var(--navy); border-radius: 4px; transition: width 0.6s; }
+
+/* Avg occupancy per month sparkline */
+.occ-month-row  { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid #f0ede8; }
+.occ-month-row:last-child { border-bottom: none; }
+.occ-month-name { font-size: 0.72rem; font-weight: 700; color: var(--navy); width: 52px; flex-shrink: 0; }
+.occ-month-track{ flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.occ-month-fill { height: 100%; border-radius: 4px; transition: width 0.6s; }
+.occ-month-pct  { font-size: 0.7rem; font-weight: 700; color: var(--navy); width: 36px; text-align: right; }
+
+/* Legend dot */
+.legend { display: flex; gap: 14px; margin-bottom: 10px; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.68rem; color: var(--muted); }
+.legend-dot  { width: 8px; height: 8px; border-radius: 2px; }
+
+@media (max-width: 768px) {
+  .dash-row       { grid-template-columns: 1fr; }
+  .dash-row.three { grid-template-columns: 1fr; }
+}
 
 /* ── Submit Form ── */
 .form-card {
@@ -305,7 +410,7 @@ tr:hover td { background: #fafaf7; }
 /* ── Responsive ── */
 @media (max-width: 640px) {
   .header { padding: 0 12px; }
-  .nav-tab { padding: 5px 10px; font-size: 0.72rem; }
+  .nav-tab { padding: 10px 14px; font-size: 0.68rem; }
   .container { padding: 12px 12px 60px; }
   .kpi-grid { grid-template-columns: 1fr 1fr; }
   .field-row { grid-template-columns: 1fr; }
@@ -326,29 +431,77 @@ tr:hover td { background: #fafaf7; }
   </div>
   <div class="header-right">
     <div class="date-badge" id="headerDate"></div>
-    <div class="nav-tabs">
-      <button class="nav-tab active" data-page="dashboard">Dashboard</button>
-      <button class="nav-tab" data-page="submit">Submit</button>
-      <button class="nav-tab" data-page="log">Log</button>
-      <button class="nav-tab" data-page="summary">Monthly</button>
-    </div>
   </div>
 </header>
+
+<!-- ── Tab Bar ── -->
+<nav class="tab-bar">
+  <div class="nav-tabs">
+    <button class="nav-tab active" data-page="dashboard">Dashboard</button>
+    <button class="nav-tab" data-page="submit">Submit</button>
+    <button class="nav-tab" data-page="log">Log</button>
+    <button class="nav-tab" data-page="summary">Monthly</button>
+  </div>
+</nav>
 
 <!-- ── Pages ── -->
 <div class="container">
 
   <!-- DASHBOARD -->
   <div class="page active" id="page-dashboard">
+
+    <!-- Row 1: Today KPIs -->
+    <div class="section-title">Today — <span id="dashTodayDate" style="font-weight:400;text-transform:none;letter-spacing:0"></span></div>
     <div class="kpi-grid" id="kpiGrid">
       <div class="loading-msg"><div class="spinner"></div>Loading dashboard…</div>
     </div>
-    <div class="section-title">Revenue – Last 7 Days</div>
-    <div class="form-card" style="padding:18px 20px 14px;">
-      <div class="bar-chart" id="barChart" style="align-items:flex-end;gap:6px;height:110px;">
+
+    <!-- Row 2: 7-day chart + MTD panel -->
+    <div class="dash-row" style="margin-bottom:20px">
+      <div class="dash-card">
+        <div class="section-title">Revenue — Last 7 Days</div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--navy)"></div>Room</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--gold);opacity:0.75"></div>Food</div>
+        </div>
+        <div class="bar-chart" id="barChart7">
+          <div class="loading-msg" style="width:100%">Loading…</div>
+        </div>
+      </div>
+      <div class="dash-card">
+        <div class="section-title">Month to Date</div>
+        <div id="mtdPanel"><div class="loading-msg">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- Row 3: Monthly history chart (full width) -->
+    <div class="dash-card" style="margin-bottom:20px">
+      <div class="section-title">Monthly Revenue — All Time</div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--navy)"></div>Revenue (cash + online)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--gold)"></div>Current month</div>
+      </div>
+      <div class="month-bar-chart" id="monthHistoryChart">
         <div class="loading-msg" style="width:100%">Loading…</div>
       </div>
     </div>
+
+    <!-- Row 4: Avg occupancy + Top rooms + Food split -->
+    <div class="dash-row three">
+      <div class="dash-card">
+        <div class="section-title">Avg Occupancy by Month</div>
+        <div id="occByMonth"><div class="loading-msg">Loading…</div></div>
+      </div>
+      <div class="dash-card">
+        <div class="section-title">Top Rooms — All Time</div>
+        <div class="room-rank" id="topRooms"><div class="loading-msg">Loading…</div></div>
+      </div>
+      <div class="dash-card">
+        <div class="section-title">Revenue Split (MTD)</div>
+        <div id="revSplit"><div class="loading-msg">Loading…</div></div>
+      </div>
+    </div>
+
   </div>
 
   <!-- SUBMIT -->
@@ -405,7 +558,7 @@ tr:hover td { background: #fafaf7; }
 // ══════════════════════════════════════════════════════════
 //  CONFIG  – Replace SCRIPT_URL after deploying GAS
 // ══════════════════════════════════════════════════════════
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw8dVmQ0XHWhyodgHYziGa9kPZWM8aOanynrHZQBMLznWIWCS3LaeTH6RJWxTVA8CP-/exec';
+const SCRIPT_URL = 'YOUR_APPS_SCRIPT_EXEC_URL_HERE';
 const PIN_HASH   = '1234';   // simple numeric PIN; replace with SHA for production
 
 // ══════════════════════════════════════════════════════════
@@ -501,61 +654,207 @@ async function loadDashboard() {
 }
 
 function renderDashboard(d) {
-  const t = d.todayRevenue || {};
-  const occ = d.occupancy || {};
-  const mtd = d.mtd || {};
+  const t    = d.todayRevenue  || {};
+  const occ  = d.occupancy     || {};
+  const mtd  = d.mtd           || {};
+  const hist = d.monthlyHistory|| [];
+  const tops = d.topRooms      || [];
+  const all  = d.allTime       || {};
+  const today= d.today || todayISO();
 
+  // ── Date label ──
+  document.getElementById('dashTodayDate').textContent = formatDisplayDate(today);
+
+  // ── Today KPIs ──
+  const occPct = Math.round(((occ.occupied||0) / (occ.total||17)) * 100);
   document.getElementById('kpiGrid').innerHTML = `
     <div class="kpi-card gold">
       <div class="kpi-label">Today — Cash Revenue</div>
       <div class="kpi-value pkr">${Number(t.totalCash||0).toLocaleString()}</div>
-      <div class="kpi-sub">Room: ${pkr(t.cashRoom)} · Food: ${pkr(t.cashFood)}</div>
+      <div class="kpi-sub">Room ${pkr(t.cashRoom)} · Food ${pkr(t.cashFood)}</div>
     </div>
     <div class="kpi-card blue">
       <div class="kpi-label">Today — Online Revenue</div>
       <div class="kpi-value pkr">${Number(t.totalOnline||0).toLocaleString()}</div>
-      <div class="kpi-sub">Room: ${pkr(t.onlineRoom)} · Food: ${pkr(t.onlineFood)}</div>
+      <div class="kpi-sub">Room ${pkr(t.onlineRoom)} · Food ${pkr(t.onlineFood)}</div>
     </div>
     <div class="kpi-card green">
       <div class="kpi-label">Today — Total Guest Revenue</div>
       <div class="kpi-value pkr">${Number(t.grandTotal||0).toLocaleString()}</div>
-      <div class="kpi-sub">Non-cash (internal): ${pkr(t.nonCashRoom)}</div>
+      <div class="kpi-sub">Non-cash internal: ${pkr(t.nonCashRoom)}</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Occupancy Today</div>
-      <div class="kpi-value">${occ.occupied||0} <span style="font-size:0.75em;color:var(--muted)">/ ${occ.total||17}</span></div>
-      <div class="kpi-sub">${Math.round(((occ.occupied||0)/(occ.total||17))*100)}% occupied</div>
+      <div class="kpi-value">${occ.occupied||0}<span style="font-size:0.65em;color:var(--muted)"> / ${occ.total||17}</span></div>
+      <div class="occ-bar-wrap">
+        <div class="occ-bar-track"><div class="occ-bar-fill" style="width:${occPct}%"></div></div>
+      </div>
+      <div class="kpi-sub">${occPct}% occupied</div>
     </div>
     <div class="kpi-card gold">
-      <div class="kpi-label">MTD Cash + Online</div>
-      <div class="kpi-value pkr">${Number(mtd.total||0).toLocaleString()}</div>
-      <div class="kpi-sub">Non-cash MTD: ${pkr(mtd.nonCash)}</div>
-    </div>
-    <div class="kpi-card">
       <div class="kpi-label">Restaurant Walk-in</div>
       <div class="kpi-value pkr">${Number(t.restoFood||0).toLocaleString()}</div>
       <div class="kpi-sub">Company food: ${pkr(t.companyFood)}</div>
     </div>
+    <div class="kpi-card">
+      <div class="kpi-label">All-Time Revenue</div>
+      <div class="kpi-value pkr">${Number((all.totalRevenue||0)/1000000).toFixed(1)}M</div>
+      <div class="kpi-sub">Room ${((all.roomRevenue||0)/1000).toFixed(0)}k · Food ${((all.foodRevenue||0)/1000).toFixed(0)}k</div>
+    </div>
   `;
 
-  // Bar chart
-  const bars = document.getElementById('barChart');
+  // ── 7-day stacked bar chart ──
+  const bars = document.getElementById('barChart7');
   const last7 = d.last7 || [];
-  if (!last7.length) { bars.innerHTML = '<div class="loading-msg">No data</div>'; return; }
-  const maxVal = Math.max(...last7.map(x => (x.cashRoom||0)+(x.onlineRoom||0)+(x.food||0)), 1);
-  const today = d.today;
-  bars.innerHTML = last7.map(day => {
-    const total = (day.cashRoom||0)+(day.onlineRoom||0)+(day.food||0);
-    const h = Math.max(Math.round((total/maxVal)*90), 2);
-    const isToday = day.date === today;
-    const label = day.date ? day.date.substring(5) : '';
-    return `
-      <div class="bar-wrap">
-        <div class="bar-val">${total > 0 ? (total/1000).toFixed(0)+'k' : ''}</div>
-        <div class="bar ${isToday?'today-bar':''}" style="height:${h}px" title="${pkr(total)}"></div>
-        <div class="bar-label">${label}</div>
-      </div>`;
-  }).join('');
+  if (!last7.length) { bars.innerHTML = '<div class="loading-msg">No data</div>'; }
+  else {
+    const maxVal = Math.max(...last7.map(x => (x.cashRoom||0)+(x.onlineRoom||0)+(x.food||0)), 1);
+    bars.innerHTML = last7.map(day => {
+      const roomTotal = (day.cashRoom||0) + (day.onlineRoom||0);
+      const foodTotal = day.food || 0;
+      const total     = roomTotal + foodTotal;
+      const totalH    = Math.max(Math.round((total / maxVal) * 90), total > 0 ? 3 : 0);
+      const roomH     = total > 0 ? Math.round((roomTotal / total) * totalH) : 0;
+      const foodH     = totalH - roomH;
+      const isToday   = day.date === today;
+      const label     = day.date ? day.date.substring(5) : '';
+      return `
+        <div class="bar-wrap">
+          <div class="bar-val">${total > 0 ? (total/1000).toFixed(0)+'k' : ''}</div>
+          <div class="bar-stack" style="height:${totalH}px">
+            <div class="bar-seg food-seg" style="height:${foodH}px"></div>
+            <div class="bar-seg room-seg ${isToday?'today-bar':''}" style="height:${roomH}px"></div>
+          </div>
+          <div class="bar-label" style="${isToday?'color:var(--gold);font-weight:700':''}">${label}</div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── MTD Panel ──
+  const mtdOccBar = mtd.avgOccupancy || 0;
+  const mtdFoodPct= mtd.foodPct || 0;
+  document.getElementById('mtdPanel').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div>
+        <div class="kpi-label">Total Revenue</div>
+        <div class="kpi-value pkr" style="font-size:1.3rem">${Number(mtd.total||0).toLocaleString()}</div>
+        <div class="kpi-sub">${mtd.daysRecorded||0} days recorded</div>
+      </div>
+      <div>
+        <div class="kpi-label" style="margin-bottom:4px">Avg Occupancy</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="flex:1">
+            <div class="occ-bar-track"><div class="occ-bar-fill" style="width:${mtdOccBar}%"></div></div>
+          </div>
+          <span style="font-size:0.88rem;font-weight:800;color:var(--navy)">${mtdOccBar}%</span>
+        </div>
+      </div>
+      <div>
+        <div class="kpi-label">RevPAR</div>
+        <div class="kpi-value pkr" style="font-size:1.1rem">${Number(mtd.revpar||0).toLocaleString()}</div>
+        <div class="kpi-sub">Revenue per available room/night</div>
+      </div>
+      <div>
+        <div class="kpi-label">Room vs Food Mix</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-top:2px">
+          Room ${100-mtdFoodPct}% · Food ${mtdFoodPct}%
+        </div>
+        <div class="split-bar-track" style="margin-top:4px">
+          <div class="split-bar-room" style="width:${100-mtdFoodPct}%"></div>
+        </div>
+      </div>
+    </div>`;
+
+  // ── Monthly history bar chart ──
+  const mChart = document.getElementById('monthHistoryChart');
+  if (!hist.length) { mChart.innerHTML = '<div class="loading-msg">No history</div>'; }
+  else {
+    const currentMonth = today.substring(0, 7);
+    const maxRev = Math.max(...hist.map(m => m.totalRevenue || 0), 1);
+    mChart.innerHTML = hist.map(m => {
+      const h   = Math.max(Math.round(((m.totalRevenue||0) / maxRev) * 80), m.totalRevenue > 0 ? 2 : 0);
+      const isCur = m.month === currentMonth;
+      const shortMo = m.month ? m.month.substring(2).replace('-', '/') : '';
+      return `
+        <div class="month-bar-wrap">
+          <div class="month-bar ${isCur?'cur':''}" style="height:${h}px" title="${m.month}: PKR ${Number(m.totalRevenue||0).toLocaleString()}"></div>
+          <div class="month-bar-label" style="${isCur?'color:var(--gold);font-weight:700':''}">${shortMo}</div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Avg occupancy by month ──
+  const occEl = document.getElementById('occByMonth');
+  if (!hist.length) { occEl.innerHTML = '<div class="loading-msg">No data</div>'; }
+  else {
+    const MONTH_NAMES = {
+      '01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun',
+      '07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'
+    };
+    occEl.innerHTML = hist.slice(-8).map(m => {
+      const pct  = m.avgOccupancy || 0;
+      const mo   = m.month ? m.month.substring(5) : '';
+      const name = (MONTH_NAMES[mo] || mo) + ' ' + (m.month||'').substring(2,4);
+      const col  = pct >= 70 ? 'var(--green)' : pct >= 40 ? 'var(--gold)' : 'var(--red)';
+      return `
+        <div class="occ-month-row">
+          <div class="occ-month-name">${name}</div>
+          <div class="occ-month-track">
+            <div class="occ-month-fill" style="width:${pct}%;background:${col}"></div>
+          </div>
+          <div class="occ-month-pct">${pct}%</div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Top rooms ──
+  const topEl = document.getElementById('topRooms');
+  if (!tops.length) { topEl.innerHTML = '<div class="loading-msg">No data</div>'; }
+  else {
+    const maxRev = tops[0].revenue || 1;
+    topEl.innerHTML = tops.map((r, i) => `
+      <div class="room-rank-row">
+        <div class="room-rank-num r${i+1}">${r.room}</div>
+        <div class="room-rank-bar-wrap">
+          <div class="room-rank-label">Room ${r.room}</div>
+          <div class="room-rank-track">
+            <div class="room-rank-fill" style="width:${Math.round((r.revenue/maxRev)*100)}%"></div>
+          </div>
+        </div>
+        <div class="room-rank-val">${(r.revenue/1000).toFixed(0)}k</div>
+      </div>`).join('');
+  }
+
+  // ── Revenue split (MTD) ──
+  const splitEl = document.getElementById('revSplit');
+  const roomPct = 100 - (mtd.foodPct || 0);
+  const foodPct = mtd.foodPct || 0;
+  splitEl.innerHTML = `
+    <div class="split-row">
+      <div class="split-item">
+        <div class="split-pct" style="color:var(--navy)">${roomPct}%</div>
+        <div class="split-lbl">Room</div>
+        <div style="font-size:0.7rem;color:var(--muted);margin-top:2px">${pkr(mtd.cashRoom||0 + mtd.onlineRoom||0)}</div>
+      </div>
+      <div style="width:1px;background:var(--border);margin:4px 0"></div>
+      <div class="split-item">
+        <div class="split-pct" style="color:var(--gold)">${foodPct}%</div>
+        <div class="split-lbl">Food</div>
+        <div style="font-size:0.7rem;color:var(--muted);margin-top:2px">${pkr(mtd.food||0)}</div>
+      </div>
+    </div>
+    <div class="split-bar-track" style="margin-top:14px">
+      <div class="split-bar-room" style="width:${roomPct}%"></div>
+    </div>
+    <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
+      <div class="kpi-label">RevPAR (All Time avg)</div>
+      <div class="kpi-value pkr" style="font-size:1.1rem">${
+        hist.length
+          ? Number(Math.round(hist.reduce((s,m)=>s+(m.revpar||0),0)/hist.length)).toLocaleString()
+          : '—'
+      }</div>
+      <div class="kpi-sub">Avg across ${hist.length} months</div>
+    </div>`;
 }
 
 // ══════════════════════════════════════════════════════════
