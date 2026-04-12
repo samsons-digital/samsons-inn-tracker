@@ -936,7 +936,6 @@ function setDateFields() {
   const today = todayISO();
   document.getElementById('headerDate').textContent = formatDisplayDate(today);
   document.getElementById('submitDate').value = today;
-  document.getElementById('logDate').value = today;
   const mo = today.substring(0, 7);
   document.getElementById('summaryMonth').value = mo;
 }
@@ -979,12 +978,15 @@ function setupNavTabs() {
 //  GAS FETCH
 // ══════════════════════════════════════════════════════════
 async function gasPost(payload) {
-  const res = await fetch(SCRIPT_URL, {
-    method: 'POST',
+  const res  = await fetch(SCRIPT_URL, {
+    method:  'POST',
     headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify(payload),
+    body:    JSON.stringify(payload),
+    redirect: 'follow',
   });
-  return res.json();
+  const text = await res.text();
+  try { return JSON.parse(text); }
+  catch(e) { return { ok: false, error: 'Bad response: ' + text.substring(0, 120) }; }
 }
 
 // ══════════════════════════════════════════════════════════
