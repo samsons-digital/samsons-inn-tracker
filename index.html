@@ -408,7 +408,133 @@ tr:hover td { background: #fafaf7; }
 .col-date { white-space: nowrap; }
 
 /* ── Responsive ── */
-/* ── Config ── */
+/* ── Log 7-Day View ── */
+.log-header-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; flex-wrap: wrap; gap: 10px;
+}
+
+.day-block {
+  background: var(--white); border-radius: var(--radius);
+  box-shadow: var(--shadow); margin-bottom: 12px;
+  overflow: hidden; border: 1.5px solid var(--border);
+  transition: border-color 0.2s;
+}
+.day-block.submitted   { border-left: 4px solid var(--green); }
+.day-block.not-submitted { border-left: 4px solid var(--red); }
+.day-block.today-block { border-left: 4px solid var(--gold); }
+
+/* Summary row — always visible, clickable */
+.day-summary {
+  display: grid;
+  grid-template-columns: 180px 1fr 1fr 1fr 120px 100px;
+  align-items: center; gap: 0;
+  padding: 0; cursor: pointer;
+  user-select: none;
+}
+.day-summary:hover { background: #fafaf7; }
+
+.day-col {
+  padding: 14px 16px;
+  border-right: 1px solid var(--border);
+}
+.day-col:last-child { border-right: none; }
+
+.day-date-main  { font-size: 0.88rem; font-weight: 800; color: var(--navy); }
+.day-date-sub   { font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
+.day-col-label  { font-size: 0.65rem; font-weight: 700; color: var(--muted);
+                  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.day-col-value  { font-size: 0.88rem; font-weight: 700; color: var(--navy); }
+.day-col-sub    { font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
+
+/* Occupancy pill */
+.occ-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 800;
+}
+.occ-pill.high   { background: #e6f4ec; color: var(--green); }
+.occ-pill.medium { background: #fdf3e0; color: var(--gold); }
+.occ-pill.low    { background: #fdecea; color: var(--red); }
+
+/* Submitted badge */
+.sub-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.4px;
+}
+.sub-badge.yes { background: #e6f4ec; color: var(--green); }
+.sub-badge.no  { background: #fdecea; color: var(--red); }
+
+/* Expand chevron */
+.day-chevron {
+  font-size: 0.7rem; color: var(--muted); margin-left: 4px;
+  transition: transform 0.2s;
+}
+.day-block.expanded .day-chevron { transform: rotate(180deg); }
+
+/* Expandable detail */
+.day-detail { display: none; border-top: 1px solid var(--border); }
+.day-block.expanded .day-detail { display: block; }
+
+/* Room detail table inside expanded */
+.day-detail table { font-size: 0.76rem; }
+.day-detail thead tr { background: #f0ede8; }
+.day-detail th { color: var(--navy); font-size: 0.65rem; padding: 7px 10px; }
+.day-detail td { padding: 6px 10px; }
+
+/* No-submission placeholder */
+.no-sub-msg {
+  padding: 20px 20px; color: var(--red);
+  font-size: 0.8rem; font-weight: 700;
+  display: flex; align-items: center; gap: 8px;
+}
+
+@media (max-width: 900px) {
+  .day-summary { grid-template-columns: 1fr 1fr 1fr; }
+  .day-col { border-bottom: 1px solid var(--border); border-right: none; }
+}
+@media (max-width: 560px) {
+  .day-summary { grid-template-columns: 1fr 1fr; }
+}
+
+/* ── Checkout Tab ── */
+.co-step-row {
+  display: flex; gap: 14px; align-items: flex-start;
+  flex-wrap: wrap; margin-bottom: 6px;
+}
+.co-step-row .field { flex: 1; min-width: 160px; }
+
+.co-preview-card {
+  background: var(--cream); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 16px 18px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 12px;
+}
+.co-preview-item .co-lbl {
+  font-size: 0.67rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;
+}
+.co-preview-item .co-val { font-size: 0.9rem; font-weight: 700; color: var(--navy); }
+.co-preview-item .co-val.pkr::before { content: 'PKR '; font-size: 0.7em; color: var(--muted); font-weight: 600; }
+.co-preview-item .co-val.zero { color: #c5bfb6; font-weight: 400; }
+.co-preview-item .co-val.highlight { color: var(--gold); }
+
+.co-not-found {
+  background: #fdecea; color: var(--red); border-radius: var(--radius);
+  padding: 14px 18px; font-size: 0.82rem; font-weight: 600; margin-top: 16px;
+  border-left: 4px solid var(--red);
+}
+.co-success {
+  background: #e6f4ec; color: var(--green); border-radius: var(--radius);
+  padding: 12px 16px; font-size: 0.82rem; font-weight: 700;
+  border-left: 4px solid var(--green);
+}
+.co-error {
+  background: #fdecea; color: var(--red); border-radius: var(--radius);
+  padding: 12px 16px; font-size: 0.82rem; font-weight: 700;
+  border-left: 4px solid var(--red);
+}
+
 .cfg-gate-card {
   max-width: 380px; margin: 60px auto; background: var(--white);
   border-radius: var(--radius); box-shadow: var(--shadow);
@@ -507,6 +633,7 @@ tr:hover td { background: #fafaf7; }
   <div class="nav-tabs">
     <button class="nav-tab active" data-page="dashboard">Dashboard</button>
     <button class="nav-tab" data-page="submit">Submit</button>
+    <button class="nav-tab" data-page="checkout">Checkout</button>
     <button class="nav-tab" data-page="log">Log</button>
     <button class="nav-tab" data-page="summary">Monthly</button>
     <button class="nav-tab" data-page="config">Config</button>
@@ -596,14 +723,87 @@ tr:hover td { background: #fafaf7; }
     </div>
   </div>
 
+  <!-- CHECKOUT -->
+  <div class="page" id="page-checkout">
+    <div class="form-card">
+      <div class="form-top">
+        <div>
+          <h2>Checkout Breakfast</h2>
+          <div style="font-size:0.72rem;color:rgba(255,255,255,0.6);margin-top:3px">
+            Add breakfast charged on checkout morning to the previous night's record
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:20px">
+        <!-- Step 1 — select date + room -->
+        <div class="section-title">Step 1 — Select the Stay Date & Room</div>
+        <div class="co-step-row">
+          <div class="field">
+            <label>Stay Date (the night before checkout)</label>
+            <input type="date" id="coDate" oninput="coReset()">
+          </div>
+          <div class="field">
+            <label>Room Number</label>
+            <select id="coRoom" onchange="coReset()">
+              <option value="">— Select room —</option>
+              <option value="101">101</option><option value="102">102</option>
+              <option value="103">103</option><option value="104">104</option>
+              <option value="105">105</option><option value="106">106</option>
+              <option value="107">107</option><option value="201">201</option>
+              <option value="202">202</option><option value="203">203</option>
+              <option value="204">204</option><option value="205">205</option>
+              <option value="206">206</option><option value="207">207</option>
+              <option value="B1">B1</option><option value="B2">B2</option>
+            </select>
+          </div>
+          <div class="field" style="align-self:flex-end">
+            <button class="btn-secondary" onclick="loadCheckoutRoom()" style="width:100%">Load Record</button>
+          </div>
+        </div>
+
+        <!-- Step 2 — preview existing record -->
+        <div id="coPreview" style="display:none">
+          <div class="section-title" style="margin-top:20px">Step 2 — Existing Record Preview</div>
+          <div class="co-preview-card" id="coPreviewCard"></div>
+
+          <!-- Step 3 — add breakfast -->
+          <div class="section-title" style="margin-top:20px">Step 3 — Add Checkout Breakfast</div>
+          <div class="co-step-row" style="align-items:flex-end">
+            <div class="field">
+              <label>Breakfast Amount (PKR)</label>
+              <input type="number" class="money" id="coBfastAmount" min="0" step="50" placeholder="e.g. 500">
+            </div>
+            <div class="field">
+              <label>Submitted by</label>
+              <input type="text" id="coSubmittedBy" placeholder="Your name">
+            </div>
+            <div class="field" style="align-self:flex-end">
+              <button class="btn-submit" onclick="submitCheckoutBreakfast()" id="coBtnSubmit">Add Breakfast Charge</button>
+            </div>
+          </div>
+          <div id="coResult" style="margin-top:12px"></div>
+        </div>
+
+        <!-- No record found -->
+        <div id="coNotFound" style="display:none" class="co-not-found">
+          ⚠ No record found for that date and room. The night's data must be submitted via the Submit tab before a checkout breakfast can be added.
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- LOG -->
   <div class="page" id="page-log">
-    <div class="log-controls">
-      <input type="date" id="logDate">
-      <button class="btn-secondary" onclick="loadDayLog()">Load Day</button>
+    <div class="log-header-bar">
+      <div>
+        <div style="font-size:0.88rem;font-weight:800;color:var(--navy)">Last 7 Days — Submission Monitor</div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:2px">Newest first · Auto-loads on tab open · Click any day to expand room detail</div>
+      </div>
+      <button class="btn-secondary" onclick="loadLast7Log()" id="logRefreshBtn">↻ Refresh</button>
     </div>
-    <div class="table-wrap">
-      <div id="logTable" class="loading-msg">Select a date above.</div>
+    <div id="log7Container">
+      <div class="loading-msg"><div class="spinner"></div>Loading last 7 days…</div>
     </div>
   </div>
 
@@ -711,7 +911,7 @@ tr:hover td { background: #fafaf7; }
 // ══════════════════════════════════════════════════════════
 //  CONFIG  – Replace SCRIPT_URL after deploying GAS
 // ══════════════════════════════════════════════════════════
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw8dVmQ0XHWhyodgHYziGa9kPZWM8aOanynrHZQBMLznWIWCS3LaeTH6RJWxTVA8CP-/exec';
+const SCRIPT_URL = 'YOUR_APPS_SCRIPT_EXEC_URL_HERE';
 const PIN_HASH   = '1234';   // simple numeric PIN; replace with SHA for production
 
 // ══════════════════════════════════════════════════════════
@@ -764,6 +964,7 @@ function setupNavTabs() {
       btn.classList.add('active');
       document.getElementById('page-' + btn.dataset.page).classList.add('active');
       if (btn.dataset.page === 'dashboard') loadDashboard();
+      if (btn.dataset.page === 'log') loadLast7Log();
       if (btn.dataset.page === 'config' && !cfgUnlocked) {
         document.getElementById('cfg-pin-gate').style.display = 'block';
         document.getElementById('cfg-panel').style.display    = 'none';
@@ -1057,7 +1258,8 @@ function buildRoomGrid() {
           contact: '', guestType: isStaff ? 'Staff – NonCash' : '',
           comments: '',
           cashRoom: 0, onlineRoom: 0, nonCashRoom: isStaff ? rate : 0,
-          cashFood: 0, onlineFood: 0, companyFood: 0, restoFood: 0,
+          regularFood: 0, ffFoodBilled: 0, ffFoodDiscount: 0,
+          companyFood: 0, restoFood: 0, checkoutBfast: 0,
         }
       };
 
@@ -1142,27 +1344,55 @@ function buildRoomCard(room, isStaff, defaultName, rate) {
 
       <div>
         <div class="money-label">Food Revenue</div>
-        <div class="field-row three" style="margin-bottom:0">
+
+        <!-- Regular guest food -->
+        <div class="field-row" style="margin-bottom:6px">
           <div class="field">
-            <label>Cash Food</label>
-            <input type="number" class="money" id="cashFood-${room}" value="0" min="0" step="100"
-                   oninput="updateNum('${room}','cashFood',this.value)">
+            <label>Regular Food — Cash</label>
+            <input type="number" class="money" id="regularFood-${room}" value="0" min="0" step="100"
+                   oninput="updateNum('${room}','regularFood',this.value)">
           </div>
           <div class="field">
-            <label>Online Food</label>
-            <input type="number" class="money" id="onlineFood-${room}" value="0" min="0" step="100"
-                   oninput="updateNum('${room}','onlineFood',this.value)">
+            <label>Resto Walk-in Only</label>
+            <input type="number" class="money" id="restoFood-${room}" value="0" min="0" step="100"
+                   oninput="updateNum('${room}','restoFood',this.value)">
           </div>
+        </div>
+
+        <!-- F&F food — shows always but labelled -->
+        <div style="background:#f0f4ff;border-radius:6px;padding:8px 10px;margin-bottom:6px">
+          <div class="money-label" style="color:#2563eb;margin-bottom:6px">F&F Discounted Food <span class="noncash-badge" style="background:#dbeafe;color:#2563eb">F&F RATE</span></div>
+          <div class="field-row three">
+            <div class="field">
+              <label>Billed (PKR)</label>
+              <input type="number" class="money" id="ffFoodBilled-${room}" value="0" min="0" step="50"
+                     oninput="updateNum('${room}','ffFoodBilled',this.value);calcFFSaving('${room}')">
+            </div>
+            <div class="field">
+              <label>Discount %</label>
+              <input type="number" class="money" id="ffFoodDiscount-${room}" value="0" min="0" max="100" step="5"
+                     placeholder="e.g. 30" oninput="updateNum('${room}','ffFoodDiscount',this.value);calcFFSaving('${room}')">
+            </div>
+            <div class="field">
+              <label>Saving (auto)</label>
+              <input type="number" class="money" id="ffFoodSaving-${room}" value="0" readonly
+                     style="background:#e8f0fe;color:#2563eb;cursor:default">
+            </div>
+          </div>
+        </div>
+
+        <!-- Company / staff food -->
+        <div class="field-row">
           <div class="field">
-            <label>Company Food</label>
+            <label>Company Food <span class="noncash-badge">INTERNAL</span></label>
             <input type="number" class="money" id="companyFood-${room}" value="0" min="0" step="100"
                    oninput="updateNum('${room}','companyFood',this.value)">
           </div>
-        </div>
-        <div class="field" style="margin-top:6px">
-          <label>Restaurant Walk-in Only</label>
-          <input type="number" class="money" id="restoFood-${room}" value="0" min="0" step="100"
-                 oninput="updateNum('${room}','restoFood',this.value)">
+          <div class="field">
+            <label style="color:var(--muted)">Checkout Bfast → use Checkout tab</label>
+            <input type="text" class="money" value="— add via Checkout tab —"
+                   readonly style="background:#f7f4ef;color:var(--muted);font-size:0.72rem;cursor:default">
+          </div>
         </div>
       </div>
     </div>`;
@@ -1187,7 +1417,9 @@ function toggleRoom(room) {
   if (!state.occupied) {
     // Reset to zero when closed (unless staff room)
     if (!state.isStaff) {
-      ['cashRoom','onlineRoom','nonCashRoom','cashFood','onlineFood','companyFood','restoFood'].forEach(f => {
+      ['cashRoom','onlineRoom','nonCashRoom',
+       'regularFood','ffFoodBilled','ffFoodDiscount',
+       'companyFood','restoFood'].forEach(f => {
         state.data[f] = 0;
         const el = document.getElementById(f + '-' + room);
         if (el) el.value = 0;
@@ -1231,15 +1463,15 @@ function onTypeChange(room, type) {
 }
 
 function updateLiveTotals() {
-  let totalCash = 0, totalOnline = 0, occupied = 0;
+  let totalCash = 0, totalFF = 0, occupied = 0;
   Object.values(ROOM_STATES).forEach(s => {
     if (!s.occupied) return;
     occupied++;
-    totalCash   += (s.data.cashRoom||0) + (s.data.cashFood||0);
-    totalOnline += (s.data.onlineRoom||0) + (s.data.onlineFood||0);
+    totalCash += (s.data.cashRoom||0) + (s.data.regularFood||0) + (s.data.restoFood||0);
+    totalFF   += (s.data.ffFoodBilled||0);
   });
   document.getElementById('liveTotals').innerHTML =
-    `<b>${occupied}</b> rooms · Cash: <b>${pkr(totalCash)}</b> · Online: <b>${pkr(totalOnline)}</b>`;
+    `<b>${occupied}</b> rooms · Cash: <b>${pkr(totalCash)}</b>${totalFF > 0 ? ` · F&F Food: <b>${pkr(totalFF)}</b>` : ''}`;
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1278,55 +1510,160 @@ async function submitDay() {
 }
 
 // ══════════════════════════════════════════════════════════
-//  LOG
+//  LOG — 7-DAY SUMMARY
 // ══════════════════════════════════════════════════════════
-async function loadDayLog() {
-  const date  = document.getElementById('logDate').value;
-  const table = document.getElementById('logTable');
-  if (!date) { toast('Select a date', 'error'); return; }
-
-  table.innerHTML = '<div class="loading-msg"><div class="spinner"></div>Loading…</div>';
+async function loadLast7Log() {
+  const container = document.getElementById('log7Container');
+  const btn = document.getElementById('logRefreshBtn');
+  container.innerHTML = '<div class="loading-msg"><div class="spinner"></div>Loading last 7 days…</div>';
+  if (btn) { btn.disabled = true; btn.textContent = '↻ Loading…'; }
 
   try {
-    const r = await gasPost({ action: 'getDayLog', date });
-    if (!r.ok) { table.innerHTML = `<p style="color:red">${r.error}</p>`; return; }
-    if (!r.entries.length) {
-      table.innerHTML = `<p class="loading-msg">No entries for ${formatDisplayDate(date)}</p>`; return;
-    }
-    renderLogTable(r.entries, table);
+    const r = await gasPost({ action: 'getLast7DaysLog' });
+    if (!r.ok) { container.innerHTML = `<p style="color:var(--red)">Error: ${r.error}</p>`; return; }
+    renderLast7Log(r.days, container);
   } catch(e) {
-    table.innerHTML = '<p style="color:var(--red)">Network error</p>';
+    container.innerHTML = '<p style="color:var(--red)">Network error — check connection.</p>';
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '↻ Refresh'; }
   }
 }
 
-function renderLogTable(entries, container) {
-  const cols = [
-    ['Room','Room'],['Guest_Name','Guest'],['Pax','Pax'],['Guest_Type','Type'],
-    ['Cash_Room','Cash Room'],['Online_Room','Online Room'],['NonCash_Room','NonCash Room'],
-    ['Cash_Food','Cash Food'],['Online_Food','Online Food'],['Company_Food','Co. Food'],
-    ['Resto_Food','Resto Food'],['Comments','Comments'],
-  ];
-  const pkrCols = new Set(['Cash_Room','Online_Room','NonCash_Room','Cash_Food','Online_Food','Company_Food','Resto_Food']);
+function renderLast7Log(days, container) {
+  const DAYS_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const today = todayISO();
 
-  let html = `<table><thead><tr>${cols.map(([,h]) => `<th>${h}</th>`).join('')}</tr></thead><tbody>`;
-  entries.forEach(row => {
-    html += '<tr>' + cols.map(([k, h]) => {
-      const val = row[k] ?? '';
-      if (k === 'Room') return `<td class="td-room">${val}</td>`;
-      if (pkrCols.has(k)) {
-        const n = parseFloat(val) || 0;
-        return `<td class="td-pkr ${n===0?'zero':''}">${n>0 ? Number(n).toLocaleString() : '—'}</td>`;
-      }
-      if (k === 'Guest_Type') {
-        const c = val.includes('NonCash') || val.includes('Staff') || val.includes('Intern') ? 'staff'
-                : val.includes('F&F') ? 'ff' : val ? 'guest' : 'other';
-        return `<td><span class="badge ${c}">${val||'—'}</span></td>`;
-      }
-      return `<td>${val||'—'}</td>`;
-    }).join('') + '</tr>';
-  });
-  html += '</tbody></table>';
-  container.innerHTML = html;
+  container.innerHTML = days.map((day, idx) => {
+    const isToday = day.date === today;
+    const dateObj = new Date(day.date + 'T00:00:00');
+    const dowLabel = isToday ? 'Today' : DAYS_SHORT[dateObj.getDay()];
+    const displayDate = formatDisplayDate(day.date);
+
+    const blockClass = [
+      'day-block',
+      isToday ? 'today-block' : (day.submitted ? 'submitted' : 'not-submitted'),
+    ].join(' ');
+
+    // Occupancy colour
+    const occClass = day.occPct >= 60 ? 'high' : day.occPct >= 30 ? 'medium' : 'low';
+
+    // Sub badge
+    const subBadge = day.submitted
+      ? `<span class="sub-badge yes">✓ Logged</span>`
+      : `<span class="sub-badge no">✗ Not Logged</span>`;
+
+    // Summary row
+    const summaryHtml = `
+      <div class="day-summary" onclick="toggleDayDetail('day-${idx}')">
+        <div class="day-col">
+          <div class="day-date-main">${dowLabel} · ${displayDate}</div>
+          <div class="day-date-sub">${day.date}</div>
+        </div>
+        <div class="day-col">
+          <div class="day-col-label">Guest Rooms · Food</div>
+          <div class="day-col-value">${day.guestRooms} rooms</div>
+          <div class="day-col-sub">
+            Cash ${(day.guestCash/1000).toFixed(0)}k
+            · Online ${(day.guestOnline/1000).toFixed(0)}k
+            · Food ${(day.guestFood/1000).toFixed(0)}k
+          </div>
+        </div>
+        <div class="day-col">
+          <div class="day-col-label">Staff Rooms · Food</div>
+          <div class="day-col-value">${day.staffRooms} rooms</div>
+          <div class="day-col-sub">
+            NonCash ${(day.nonCashTotal/1000).toFixed(0)}k
+            · Co. Food ${(day.staffFood/1000).toFixed(0)}k
+          </div>
+        </div>
+        <div class="day-col">
+          <div class="day-col-label">Total Guest Revenue</div>
+          <div class="day-col-value">PKR ${Number(day.totalGuestRevenue).toLocaleString()}</div>
+          <div class="day-col-sub">
+            Resto walk-in: ${(day.restoFood/1000).toFixed(0)}k
+          </div>
+        </div>
+        <div class="day-col">
+          <div class="day-col-label">Occupancy</div>
+          <span class="occ-pill ${occClass}">${day.occPct}%</span>
+          <div class="day-col-sub" style="margin-top:4px">${day.guestRooms}/${day.guestRoomsAvailable} rooms</div>
+        </div>
+        <div class="day-col" style="text-align:center">
+          ${subBadge}
+          <div style="font-size:0.62rem;color:var(--muted);margin-top:6px">
+            ${day.submitted ? day.entries.length + ' entries' : 'No data'}
+            <span class="day-chevron">▼</span>
+          </div>
+        </div>
+      </div>`;
+
+    // Detail table (shown on expand)
+    let detailHtml = '';
+    if (!day.submitted) {
+      detailHtml = `<div class="no-sub-msg">⚠ No submission recorded for ${displayDate}. Reception must submit this day's data.</div>`;
+    } else {
+      const detailCols = [
+        ['Room','Room'],['Guest_Name','Guest'],['Guest_Type','Type'],
+        ['Cash_Room','Cash Rm'],['Online_Room','Online Rm'],['NonCash_Room','NC Rm'],
+        ['Cash_Food','Cash Fd'],['Company_Food','Co. Fd'],['Resto_Food','Resto'],
+        ['Comments','Comments'],
+      ];
+      const pkrCols = new Set(['Cash_Room','Online_Room','NonCash_Room','Cash_Food','Online_Food','Company_Food','Resto_Food']);
+
+      let rows = '';
+      day.entries.forEach(e => {
+        const isStaff = (e.Guest_Type||'').includes('NonCash') || (e.Guest_Type||'').includes('Staff')
+                     || (e.Guest_Type||'').includes('Intern') || (e.Guest_Type||'').includes('F&F');
+        rows += `<tr style="${isStaff ? 'background:#f0f4ff' : ''}">` +
+          detailCols.map(([k]) => {
+            const val = e[k] ?? '';
+            if (k === 'Room') return `<td class="td-room">${val}</td>`;
+            if (pkrCols.has(k)) {
+              const n = parseFloat(val) || 0;
+              return `<td class="td-pkr ${n===0?'zero':''}">${n>0?Number(n).toLocaleString():'—'}</td>`;
+            }
+            if (k === 'Guest_Type') {
+              const cls = isStaff ? 'staff' : (e.Guest_Type||'').includes('F&F') ? 'ff' : 'guest';
+              return `<td><span class="badge ${cls}">${val||'—'}</span></td>`;
+            }
+            return `<td>${val||'—'}</td>`;
+          }).join('') + '</tr>';
+      });
+
+      // Totals row for the detail
+      const totals = {};
+      ['Cash_Room','Online_Room','NonCash_Room','Cash_Food','Online_Food','Company_Food','Resto_Food']
+        .forEach(k => totals[k] = day.entries.reduce((s,e) => s + (parseFloat(e[k])||0), 0));
+
+      rows += `<tr class="month-totals">
+        <td><b>TOTAL</b></td>
+        <td></td>
+        <td></td>
+        ${['Cash_Room','Online_Room','NonCash_Room','Cash_Food','Company_Food','Resto_Food']
+            .map(k => `<td class="td-pkr"><b>${Number(totals[k]).toLocaleString()}</b></td>`).join('')}
+        <td></td>
+      </tr>`;
+
+      detailHtml = `
+        <div class="table-wrap" style="padding:0 16px 14px">
+          <table>
+            <thead><tr>${detailCols.map(([,h]) => `<th>${h}</th>`).join('')}</tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+    }
+
+    return `
+      <div class="${blockClass}" id="day-${idx}">
+        ${summaryHtml}
+        <div class="day-detail">${detailHtml}</div>
+      </div>`;
+  }).join('');
+}
+
+function toggleDayDetail(id) {
+  const block = document.getElementById(id);
+  if (block) block.classList.toggle('expanded');
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1351,14 +1688,19 @@ async function loadMonthlySummary() {
 
 function renderSummaryTable(rows, container) {
   const cols = [
-    ['Date','Date'],['Cash_Room','Cash Room'],['Online_Room','Online Room'],['NonCash_Room','NonCash Rm'],
-    ['Cash_Food','Cash Food'],['Online_Food','Online Food'],['Company_Food','Co. Food'],
-    ['Resto_Food','Resto'],['Total_Revenue','Total Revenue'],['Total_NonCash','Total NonCash'],
+    ['Date','Date'],
+    ['Cash_Room','Cash Room'],['Online_Room','Online Room'],['NonCash_Room','NC Room'],
+    ['Regular_Food','Reg. Food'],['FF_Food_Billed','F&F Billed'],['FF_Food_Saving','F&F Saving'],
+    ['Company_Food','Co. Food'],['Resto_Food','Resto'],['Checkout_Bfast','Chk Bfast'],
+    ['Total_Revenue','Total Revenue'],['Total_NonCash','Total NonCash'],
     ['Rooms_Occupied','Occ'],
   ];
-  const pkrCols = new Set(['Cash_Room','Online_Room','NonCash_Room','Cash_Food','Online_Food','Company_Food','Resto_Food','Total_Revenue','Total_NonCash']);
+  const pkrCols = new Set([
+    'Cash_Room','Online_Room','NonCash_Room',
+    'Regular_Food','FF_Food_Billed','FF_Food_Saving','Company_Food','Resto_Food','Checkout_Bfast',
+    'Total_Revenue','Total_NonCash',
+  ]);
 
-  // Compute totals
   const totals = {};
   cols.forEach(([k]) => totals[k] = 0);
   rows.forEach(row => cols.forEach(([k]) => totals[k] += parseFloat(row[k])||0));
@@ -1368,6 +1710,14 @@ function renderSummaryTable(rows, container) {
     html += '<tr>' + cols.map(([k]) => {
       if (k === 'Date') return `<td class="col-date">${row[k]||''}</td>`;
       if (k === 'Rooms_Occupied') return `<td style="text-align:center">${parseInt(row[k])||0}</td>`;
+      if (k === 'FF_Food_Saving') {
+        const n = parseFloat(row[k])||0;
+        return `<td class="td-pkr" style="${n>0?'color:var(--green)':''}">${n>0?Number(n).toLocaleString():'—'}</td>`;
+      }
+      if (k === 'Checkout_Bfast') {
+        const n = parseFloat(row[k])||0;
+        return `<td class="td-pkr" style="${n>0?'color:var(--gold)':''}">${n>0?Number(n).toLocaleString():'—'}</td>`;
+      }
       if (pkrCols.has(k)) {
         const n = parseFloat(row[k])||0;
         return `<td class="td-pkr ${n===0?'zero':''}">${n>0?Number(n).toLocaleString():'—'}</td>`;
@@ -1376,7 +1726,6 @@ function renderSummaryTable(rows, container) {
     }).join('') + '</tr>';
   });
 
-  // Totals row
   html += '<tr class="month-totals"><td><b>TOTAL</b></td>' + cols.slice(1).map(([k]) => {
     if (k === 'Rooms_Occupied') return `<td style="text-align:center">—</td>`;
     if (pkrCols.has(k)) return `<td class="td-pkr"><b>${Number(totals[k]).toLocaleString()}</b></td>`;
@@ -1400,7 +1749,156 @@ function toast(msg, type = 'info') {
 }
 
 // ══════════════════════════════════════════════════════════
-//  CONFIG TAB
+//  CHECKOUT TAB
+// ══════════════════════════════════════════════════════════
+
+function coReset() {
+  document.getElementById('coPreview').style.display  = 'none';
+  document.getElementById('coNotFound').style.display = 'none';
+  document.getElementById('coResult').innerHTML       = '';
+  const btn = document.getElementById('coBtnSubmit');
+  if (btn) { btn.disabled = false; btn.textContent = 'Add Breakfast Charge'; }
+}
+
+async function loadCheckoutRoom() {
+  const date = document.getElementById('coDate').value;
+  const room = document.getElementById('coRoom').value;
+
+  if (!date || !room) { toast('Select both a date and a room first', 'error'); return; }
+
+  document.getElementById('coPreview').style.display  = 'none';
+  document.getElementById('coNotFound').style.display = 'none';
+  document.getElementById('coResult').innerHTML       = '<div class="loading-msg"><div class="spinner"></div>Loading record…</div>';
+
+  try {
+    const r = await gasPost({ action: 'getCheckoutRoom', date, room });
+    document.getElementById('coResult').innerHTML = '';
+
+    if (!r.ok) { toast('Error: ' + r.error, 'error'); return; }
+
+    if (!r.found) {
+      document.getElementById('coNotFound').style.display = 'block';
+      return;
+    }
+
+    // Render the preview card
+    const e = r.entry;
+    const nn = (v) => parseFloat(v)||0;
+    const fmtPKR = (v) => nn(v) > 0
+      ? `<span class="co-val pkr">${Number(nn(v)).toLocaleString()}</span>`
+      : `<span class="co-val zero">—</span>`;
+
+    const existingBfast = nn(e.Checkout_Bfast);
+
+    document.getElementById('coPreviewCard').innerHTML = `
+      <div class="co-preview-item">
+        <div class="co-lbl">Room</div>
+        <div class="co-val">${e.Room || room}</div>
+      </div>
+      <div class="co-preview-item">
+        <div class="co-lbl">Stay Date</div>
+        <div class="co-val">${e.Date || date}</div>
+      </div>
+      <div class="co-preview-item">
+        <div class="co-lbl">Guest</div>
+        <div class="co-val">${e.Guest_Name || '—'}</div>
+      </div>
+      <div class="co-preview-item">
+        <div class="co-lbl">Guest Type</div>
+        <div class="co-val">${e.Guest_Type || '—'}</div>
+      </div>
+      <div class="co-preview-item">
+        <div class="co-lbl">Cash Room</div>
+        ${fmtPKR(e.Cash_Room)}
+      </div>
+      <div class="co-preview-item">
+        <div class="co-lbl">Regular Food</div>
+        ${fmtPKR(e.Regular_Food)}
+      </div>
+      <div class="co-preview-item">
+        <div class="co-lbl">F&F Food Billed</div>
+        ${fmtPKR(e.FF_Food_Billed)}
+      </div>
+      <div class="co-preview-item">
+        <div class="co-lbl">Checkout Bfast (current)</div>
+        <div class="co-val ${existingBfast > 0 ? 'highlight' : 'zero'}">
+          ${existingBfast > 0 ? 'PKR ' + Number(existingBfast).toLocaleString() : 'None yet'}
+        </div>
+      </div>
+    `;
+
+    document.getElementById('coPreview').style.display = 'block';
+
+    // Pre-fill submittedBy from main form if available
+    const mainBy = document.getElementById('submittedBy')?.value;
+    if (mainBy) document.getElementById('coSubmittedBy').value = mainBy;
+
+  } catch(err) {
+    document.getElementById('coResult').innerHTML = '';
+    toast('Network error loading record', 'error');
+  }
+}
+
+async function submitCheckoutBreakfast() {
+  const date    = document.getElementById('coDate').value;
+  const room    = document.getElementById('coRoom').value;
+  const bfast   = parseFloat(document.getElementById('coBfastAmount').value) || 0;
+  const byWhom  = document.getElementById('coSubmittedBy').value.trim() || 'Portal';
+  const btn     = document.getElementById('coBtnSubmit');
+  const result  = document.getElementById('coResult');
+
+  if (!date || !room)  { toast('Date and room are required', 'error'); return; }
+  if (bfast <= 0)      { toast('Enter a breakfast amount greater than zero', 'error'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  result.innerHTML = '';
+
+  try {
+    const r = await gasPost({
+      action:      'appendCheckoutBreakfast',
+      date, room,
+      breakfast:   bfast,
+      submittedBy: byWhom,
+    });
+
+    if (r.ok) {
+      result.innerHTML = `
+        <div class="co-success">
+          ✓ Breakfast of PKR ${Number(bfast).toLocaleString()} added to Room ${room} — ${formatDisplayDate(date)}<br>
+          <span style="font-weight:400;font-size:0.75rem">Total checkout breakfast on this stay: PKR ${Number(r.newTotal).toLocaleString()}</span>
+        </div>`;
+      toast(`✓ Breakfast PKR ${Number(bfast).toLocaleString()} saved to ${room} / ${date}`, 'success');
+      // Reload the preview to reflect updated total
+      await loadCheckoutRoom();
+      document.getElementById('coBfastAmount').value = '';
+    } else {
+      result.innerHTML = `<div class="co-error">✗ ${r.error}</div>`;
+      btn.disabled = false;
+      btn.textContent = 'Add Breakfast Charge';
+    }
+  } catch(err) {
+    result.innerHTML = `<div class="co-error">✗ Network error — check connection.</div>`;
+    btn.disabled = false;
+    btn.textContent = 'Add Breakfast Charge';
+  }
+}
+
+// ── F&F Saving auto-calculator ─────────────────────────────────
+function calcFFSaving(room) {
+  const billed   = parseFloat(document.getElementById('ffFoodBilled-'   + room)?.value) || 0;
+  const discount = parseFloat(document.getElementById('ffFoodDiscount-' + room)?.value) || 0;
+  const savingEl = document.getElementById('ffFoodSaving-' + room);
+  if (!savingEl) return;
+
+  let saving = 0;
+  if (discount > 0 && billed > 0) {
+    const fullValue = Math.round(billed / (1 - discount / 100));
+    saving = fullValue - billed;
+  }
+  savingEl.value = saving;
+  ROOM_STATES[room].data.ffFoodDiscount = discount;
+}
 // ══════════════════════════════════════════════════════════
 const CONFIG_PIN = '1234';
 let cfgUnlocked  = false;
