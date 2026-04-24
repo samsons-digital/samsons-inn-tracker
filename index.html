@@ -94,6 +94,28 @@ body {
 .page { display: none; }
 .page.active { display: block; }
 
+/* Period pills */
+.period-bar {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 18px; align-items: center;
+}
+.period-label {
+  font-size: 0.7rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.6px; margin-right: 4px;
+}
+.period-pill {
+  padding: 6px 16px; border-radius: 20px; font-size: 0.75rem;
+  font-weight: 700; cursor: pointer; border: 1.5px solid var(--border);
+  background: var(--white); color: var(--muted);
+  transition: all 0.18s; white-space: nowrap;
+}
+.period-pill:hover { border-color: var(--navy); color: var(--navy); }
+.period-pill.active {
+  background: var(--navy); color: var(--white);
+  border-color: var(--navy);
+}
+.period-pill.active.gold { background: var(--gold); color: var(--navy); border-color: var(--gold); }
+
 /* ── Dashboard ── */
 .kpi-grid {
   display: grid;
@@ -646,8 +668,22 @@ tr:hover td { background: #fafaf7; }
   <!-- DASHBOARD -->
   <div class="page active" id="page-dashboard">
 
-    <!-- Row 1: Today KPIs -->
-    <div class="section-title">Today — <span id="dashTodayDate" style="font-weight:400;text-transform:none;letter-spacing:0"></span></div>
+    <!-- Period Pill Bar -->
+    <div class="period-bar" id="periodBar">
+      <span class="period-label">View:</span>
+      <button class="period-pill gold active" data-period="today"       onclick="setPeriod('today')">Today</button>
+      <button class="period-pill"             data-period="yesterday"   onclick="setPeriod('yesterday')">Yesterday</button>
+      <button class="period-pill"             data-period="last7"       onclick="setPeriod('last7')">Last 7 Days</button>
+      <button class="period-pill"             data-period="lastweekend" onclick="setPeriod('lastweekend')">Last Weekend</button>
+      <button class="period-pill"             data-period="thismonth"   onclick="setPeriod('thismonth')">This Month</button>
+      <button class="period-pill"             data-period="lastmonth"   onclick="setPeriod('lastmonth')">Last Month</button>
+    </div>
+
+    <!-- Today label -->
+    <div class="section-title">
+      <span id="periodHeading">Today</span> —
+      <span id="dashTodayDate" style="font-weight:400;text-transform:none;letter-spacing:0"></span>
+    </div>
     <div class="kpi-grid" id="kpiGrid">
       <div class="loading-msg"><div class="spinner"></div>Loading dashboard…</div>
     </div>
@@ -1015,48 +1051,150 @@ async function loadDashboard() {
   }
 }
 
+// ── Period state ────────────────────────────────────────────────
+let DASH_DATA    = null;   // raw response from getDashboard
+let ACTIVE_PERIOD = 'today';
+
+function setPeriod(period) {
+  ACTIVE_PERIOD = period;
+  document.querySelectorAll('.period-pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.period === period);
+    p.classList.toggle('gold',   p.dataset.period === period && period === 'today');
+  });
+  if (DASH_DATA) renderDashboard(DASH_DATA);
+}
+
+// Returns { dateFrom, dateTo, label, dateRange[] } for a period key
+function computePeriod(period, today) {
+  const d = (iso) => new Date(iso + 'T00:00:00');
+  const iso = (dt) => `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}`;
+
+  const todayDt = d(today);
+
+  const addDays = (dt, n) => {
+    const x = new Date(dt); x.setDate(x.getDate() + n); return x;
+  };
+  const range = (from, to) => {
+    const dates = []; let cur = new Date(from);
+    while (cur <= to) { dates.push(iso(cur)); cur = addDays(cur, 1); }
+    return dates;
+  };
+
+  switch (period) {
+    case 'today':
+      return { label: 'Today', dateStr: formatDisplayDate(today), dates: [today] };
+
+    case 'yesterday': {
+      const yd = iso(addDays(todayDt, -1));
+      return { label: 'Yesterday', dateStr: formatDisplayDate(yd), dates: [yd] };
+    }
+
+    case 'last7': {
+      const from = iso(addDays(todayDt, -6));
+      return { label: 'Last 7 Days', dateStr: `${formatDisplayDate(from)} – ${formatDisplayDate(today)}`, dates: range(d(from), todayDt) };
+    }
+
+    case 'lastweekend': {
+      // Most recent Sat + Sun (look back up to 7 days)
+      const dow = todayDt.getDay(); // 0=Sun, 6=Sat
+      const lastSun = iso(addDays(todayDt, -(dow === 0 ? 7 : dow)));
+      const lastSat = iso(addDays(d(lastSun), -1));
+      return { label: 'Last Weekend', dateStr: `${formatDisplayDate(lastSat)} – ${formatDisplayDate(lastSun)}`, dates: [lastSat, lastSun] };
+    }
+
+    case 'thismonth': {
+      const mo = today.substring(0, 7);
+      const from = mo + '-01';
+      return { label: 'This Month', dateStr: today.substring(0, 7), dates: range(d(from), todayDt) };
+    }
+
+    case 'lastmonth': {
+      const lm = new Date(todayDt.getFullYear(), todayDt.getMonth() - 1, 1);
+      const lmEnd = new Date(todayDt.getFullYear(), todayDt.getMonth(), 0);
+      const from = iso(lm); const to = iso(lmEnd);
+      return { label: 'Last Month', dateStr: iso(lm).substring(0, 7), dates: range(lm, lmEnd) };
+    }
+
+    default:
+      return { label: 'Today', dateStr: formatDisplayDate(today), dates: [today] };
+  }
+}
+
+// Aggregate dailySummary rows for a set of dates
+function aggregatePeriod(dailySummary, dates) {
+  const dateSet = new Set(dates);
+  const TOTAL_ROOMS  = 17;
+  let cashRoom=0, onlineRoom=0, nonCash=0, food=0, compFood=0, occRoomDays=0;
+  let daysWithData = 0;
+
+  dailySummary.forEach(d => {
+    if (!dateSet.has(d.date)) return;
+    cashRoom    += d.cashRoom    || 0;
+    onlineRoom  += d.onlineRoom  || 0;
+    nonCash     += d.nonCash     || 0;
+    food        += d.food        || 0;
+    compFood    += d.compFood    || 0;
+    occRoomDays += d.occupied    || 0;
+    if ((d.cashRoom||0)+(d.onlineRoom||0)+(d.food||0)+(d.nonCash||0) > 0) daysWithData++;
+  });
+
+  const total      = cashRoom + onlineRoom + food;
+  const days       = Math.max(daysWithData, 1);
+  const avgOcc     = Math.round((occRoomDays / (days * TOTAL_ROOMS)) * 100);
+  const revpar     = Math.round(total / (dates.length * TOTAL_ROOMS));
+  const foodPct    = total > 0 ? Math.round((food / total) * 100) : 0;
+
+  return { cashRoom, onlineRoom, nonCash, food, compFood,
+           total, avgOcc, revpar, foodPct, daysRecorded: daysWithData };
+}
+
 function renderDashboard(d) {
-  const t    = d.todayRevenue  || {};
-  const occ  = d.occupancy     || {};
-  const mtd  = d.mtd           || {};
-  const hist = d.monthlyHistory|| [];
-  const tops = d.topRooms      || [];
-  const all  = d.allTime       || {};
-  const today= d.today || todayISO();
+  DASH_DATA = d;
 
-  // ── Date label ──
-  document.getElementById('dashTodayDate').textContent = formatDisplayDate(today);
+  const today  = d.today || todayISO();
+  const period = computePeriod(ACTIVE_PERIOD, today);
+  const agg    = aggregatePeriod(d.dailySummary || [], period.dates);
 
-  // ── Today KPIs ──
-  const occPct = Math.round(((occ.occupied||0) / (occ.total||17)) * 100);
+  const hist   = d.monthlyHistory || [];
+  const tops   = d.topRooms       || [];
+  const all    = d.allTime        || {};
+
+  // ── Period heading ──
+  document.getElementById('periodHeading').textContent = period.label;
+  document.getElementById('dashTodayDate').textContent = period.dateStr;
+
+  // ── KPI cards (period-driven) ──
+  const occPct = Math.round(((agg.avgOcc || 0)));
+  const roomPct = 100 - (agg.foodPct || 0);
+
   document.getElementById('kpiGrid').innerHTML = `
     <div class="kpi-card gold">
-      <div class="kpi-label">Today — Cash Revenue</div>
-      <div class="kpi-value pkr">${Number(t.totalCash||0).toLocaleString()}</div>
-      <div class="kpi-sub">Room ${pkr(t.cashRoom)} · Food ${pkr(t.cashFood)}</div>
+      <div class="kpi-label">${period.label} — Cash Revenue</div>
+      <div class="kpi-value pkr">${Number(agg.cashRoom).toLocaleString()}</div>
+      <div class="kpi-sub">Room + Food combined</div>
     </div>
     <div class="kpi-card blue">
-      <div class="kpi-label">Today — Online Revenue</div>
-      <div class="kpi-value pkr">${Number(t.totalOnline||0).toLocaleString()}</div>
-      <div class="kpi-sub">Room ${pkr(t.onlineRoom)} · Food ${pkr(t.onlineFood)}</div>
+      <div class="kpi-label">${period.label} — Online Revenue</div>
+      <div class="kpi-value pkr">${Number(agg.onlineRoom).toLocaleString()}</div>
+      <div class="kpi-sub">Bank transfer / online payments</div>
     </div>
     <div class="kpi-card green">
-      <div class="kpi-label">Today — Total Guest Revenue</div>
-      <div class="kpi-value pkr">${Number(t.grandTotal||0).toLocaleString()}</div>
-      <div class="kpi-sub">Non-cash internal: ${pkr(t.nonCashRoom)}</div>
+      <div class="kpi-label">${period.label} — Total Guest Revenue</div>
+      <div class="kpi-value pkr">${Number(agg.total).toLocaleString()}</div>
+      <div class="kpi-sub">Non-cash internal: ${pkr(agg.nonCash)}</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-label">Occupancy Today</div>
-      <div class="kpi-value">${occ.occupied||0}<span style="font-size:0.65em;color:var(--muted)"> / ${occ.total||17}</span></div>
+      <div class="kpi-label">Avg Occupancy</div>
+      <div class="kpi-value">${agg.avgOcc}<span style="font-size:0.65em;color:var(--muted)">%</span></div>
       <div class="occ-bar-wrap">
-        <div class="occ-bar-track"><div class="occ-bar-fill" style="width:${occPct}%"></div></div>
+        <div class="occ-bar-track"><div class="occ-bar-fill" style="width:${Math.min(agg.avgOcc,100)}%"></div></div>
       </div>
-      <div class="kpi-sub">${occPct}% occupied</div>
+      <div class="kpi-sub">${agg.daysRecorded} day${agg.daysRecorded!==1?'s':''} recorded</div>
     </div>
     <div class="kpi-card gold">
-      <div class="kpi-label">Restaurant Walk-in</div>
-      <div class="kpi-value pkr">${Number(t.restoFood||0).toLocaleString()}</div>
-      <div class="kpi-sub">Company food: ${pkr(t.companyFood)}</div>
+      <div class="kpi-label">RevPAR</div>
+      <div class="kpi-value pkr">${Number(agg.revpar).toLocaleString()}</div>
+      <div class="kpi-sub">Revenue per available room/night</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">All-Time Revenue</div>
@@ -1092,13 +1230,12 @@ function renderDashboard(d) {
     }).join('');
   }
 
-  // ── MTD Panel ──
-  const mtdOccBar = mtd.avgOccupancy || 0;
-  const mtdFoodPct= mtd.foodPct || 0;
+  // ── MTD Panel (always shows this month regardless of pill) ──
+  const mtd = d.mtd || {};
   document.getElementById('mtdPanel').innerHTML = `
     <div style="display:flex;flex-direction:column;gap:12px">
       <div>
-        <div class="kpi-label">Total Revenue</div>
+        <div class="kpi-label">This Month — Total Revenue</div>
         <div class="kpi-value pkr" style="font-size:1.3rem">${Number(mtd.total||0).toLocaleString()}</div>
         <div class="kpi-sub">${mtd.daysRecorded||0} days recorded</div>
       </div>
@@ -1106,9 +1243,9 @@ function renderDashboard(d) {
         <div class="kpi-label" style="margin-bottom:4px">Avg Occupancy</div>
         <div style="display:flex;align-items:center;gap:8px">
           <div style="flex:1">
-            <div class="occ-bar-track"><div class="occ-bar-fill" style="width:${mtdOccBar}%"></div></div>
+            <div class="occ-bar-track"><div class="occ-bar-fill" style="width:${mtd.avgOccupancy||0}%"></div></div>
           </div>
-          <span style="font-size:0.88rem;font-weight:800;color:var(--navy)">${mtdOccBar}%</span>
+          <span style="font-size:0.88rem;font-weight:800;color:var(--navy)">${mtd.avgOccupancy||0}%</span>
         </div>
       </div>
       <div>
@@ -1119,27 +1256,28 @@ function renderDashboard(d) {
       <div>
         <div class="kpi-label">Room vs Food Mix</div>
         <div style="font-size:0.78rem;color:var(--muted);margin-top:2px">
-          Room ${100-mtdFoodPct}% · Food ${mtdFoodPct}%
+          Room ${100-(mtd.foodPct||0)}% · Food ${mtd.foodPct||0}%
         </div>
         <div class="split-bar-track" style="margin-top:4px">
-          <div class="split-bar-room" style="width:${100-mtdFoodPct}%"></div>
+          <div class="split-bar-room" style="width:${100-(mtd.foodPct||0)}%"></div>
         </div>
       </div>
     </div>`;
 
-  // ── Monthly history bar chart ──
+  // ── Monthly history chart ──
   const mChart = document.getElementById('monthHistoryChart');
   if (!hist.length) { mChart.innerHTML = '<div class="loading-msg">No history</div>'; }
   else {
-    const currentMonth = today.substring(0, 7);
-    const maxRev = Math.max(...hist.map(m => m.totalRevenue || 0), 1);
+    const curMonth = today.substring(0, 7);
+    const maxRev   = Math.max(...hist.map(m => m.totalRevenue || 0), 1);
     mChart.innerHTML = hist.map(m => {
-      const h   = Math.max(Math.round(((m.totalRevenue||0) / maxRev) * 80), m.totalRevenue > 0 ? 2 : 0);
-      const isCur = m.month === currentMonth;
+      const h    = Math.max(Math.round(((m.totalRevenue||0) / maxRev) * 80), m.totalRevenue > 0 ? 2 : 0);
+      const isCur = m.month === curMonth;
       const shortMo = m.month ? m.month.substring(2).replace('-', '/') : '';
       return `
         <div class="month-bar-wrap">
-          <div class="month-bar ${isCur?'cur':''}" style="height:${h}px" title="${m.month}: PKR ${Number(m.totalRevenue||0).toLocaleString()}"></div>
+          <div class="month-bar ${isCur?'cur':''}" style="height:${h}px"
+               title="${m.month}: PKR ${Number(m.totalRevenue||0).toLocaleString()}"></div>
           <div class="month-bar-label" style="${isCur?'color:var(--gold);font-weight:700':''}">${shortMo}</div>
         </div>`;
     }).join('');
@@ -1149,14 +1287,12 @@ function renderDashboard(d) {
   const occEl = document.getElementById('occByMonth');
   if (!hist.length) { occEl.innerHTML = '<div class="loading-msg">No data</div>'; }
   else {
-    const MONTH_NAMES = {
-      '01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun',
-      '07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'
-    };
+    const MN = {'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun',
+                '07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'};
     occEl.innerHTML = hist.slice(-8).map(m => {
       const pct  = m.avgOccupancy || 0;
       const mo   = m.month ? m.month.substring(5) : '';
-      const name = (MONTH_NAMES[mo] || mo) + ' ' + (m.month||'').substring(2,4);
+      const name = (MN[mo]||mo) + ' ' + (m.month||'').substring(2,4);
       const col  = pct >= 70 ? 'var(--green)' : pct >= 40 ? 'var(--gold)' : 'var(--red)';
       return `
         <div class="occ-month-row">
@@ -1187,26 +1323,26 @@ function renderDashboard(d) {
       </div>`).join('');
   }
 
-  // ── Revenue split (MTD) ──
+  // ── Revenue split ──
   const splitEl = document.getElementById('revSplit');
-  const roomPct = 100 - (mtd.foodPct || 0);
-  const foodPct = mtd.foodPct || 0;
+  const foodPct2 = agg.foodPct || 0;
+  const roomPct2 = 100 - foodPct2;
   splitEl.innerHTML = `
     <div class="split-row">
       <div class="split-item">
-        <div class="split-pct" style="color:var(--navy)">${roomPct}%</div>
+        <div class="split-pct" style="color:var(--navy)">${roomPct2}%</div>
         <div class="split-lbl">Room</div>
-        <div style="font-size:0.7rem;color:var(--muted);margin-top:2px">${pkr(mtd.cashRoom||0 + mtd.onlineRoom||0)}</div>
+        <div style="font-size:0.7rem;color:var(--muted);margin-top:2px">${pkr(agg.cashRoom + agg.onlineRoom)}</div>
       </div>
       <div style="width:1px;background:var(--border);margin:4px 0"></div>
       <div class="split-item">
-        <div class="split-pct" style="color:var(--gold)">${foodPct}%</div>
+        <div class="split-pct" style="color:var(--gold)">${foodPct2}%</div>
         <div class="split-lbl">Food</div>
-        <div style="font-size:0.7rem;color:var(--muted);margin-top:2px">${pkr(mtd.food||0)}</div>
+        <div style="font-size:0.7rem;color:var(--muted);margin-top:2px">${pkr(agg.food)}</div>
       </div>
     </div>
     <div class="split-bar-track" style="margin-top:14px">
-      <div class="split-bar-room" style="width:${roomPct}%"></div>
+      <div class="split-bar-room" style="width:${roomPct2}%"></div>
     </div>
     <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
       <div class="kpi-label">RevPAR (All Time avg)</div>
