@@ -455,6 +455,49 @@ tr:hover td { background: #fafaf7; }
 .col-date { white-space: nowrap; }
 
 /* ── Responsive ── */
+/* ── Occupancy Breakdown Panel ── */
+.occ-breakdown-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+.occ-breakdown-block {
+  background: var(--cream); border-radius: 6px; padding: 14px 16px;
+}
+.occ-breakdown-block.staff-block { background: #e8f0fe; }
+.occ-breakdown-block.impact-block { background: #fdf3e0; border: 1px solid rgba(200,146,46,0.25); }
+.occ-bd-title {
+  font-size: 0.68rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px;
+}
+.occ-bd-title.blue  { color: #2563eb; }
+.occ-bd-title.gold  { color: var(--gold); }
+.occ-bd-title.navy  { color: var(--navy); }
+.occ-bd-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.occ-bd-row:last-child { margin-bottom: 0; }
+.occ-bd-label { font-size: 0.72rem; color: var(--muted); flex: 1; }
+.occ-bd-val   { font-size: 0.88rem; font-weight: 800; color: var(--navy); white-space: nowrap; }
+.occ-bd-val.green { color: var(--green); }
+.occ-bd-val.gold  { color: var(--gold); }
+.occ-bd-val.red   { color: var(--red); }
+.occ-bd-val.blue  { color: #2563eb; }
+
+.occ-room-vis {
+  display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px;
+}
+.occ-room-dot {
+  width: 28px; height: 28px; border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.6rem; font-weight: 800;
+}
+.occ-room-dot.guest-occ   { background: var(--navy); color: var(--white); }
+.occ-room-dot.guest-empty { background: #e0ddd8; color: var(--muted); }
+.occ-room-dot.staff-perm  { background: #2563eb; color: var(--white); }
+
+@media (max-width: 768px) {
+  .occ-breakdown-grid { grid-template-columns: 1fr; }
+}
+
 /* ── Log 7-Day View ── */
 .log-header-bar {
   display: flex; align-items: center; justify-content: space-between;
@@ -745,6 +788,14 @@ tr:hover td { background: #fafaf7; }
       <div class="month-bar-chart" id="monthHistoryChart">
         <div class="loading-msg" style="width:100%">Loading…</div>
       </div>
+    </div>
+
+    <!-- Row 3b: Room Occupancy Breakdown (full width) -->
+    <div class="dash-card" style="margin-bottom:20px" id="occBreakdownCard">
+      <div class="section-title">Room Occupancy Breakdown
+        <span id="occPeriodLabel" style="font-size:0.72rem;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0;margin-left:4px"></span>
+      </div>
+      <div id="occBreakdown"><div class="loading-msg">Loading…</div></div>
     </div>
 
     <!-- Row 4: Avg occupancy + Top rooms + Food split -->
@@ -1196,30 +1247,41 @@ function computePeriod(period, today) {
 
 // Aggregate dailySummary rows for a set of dates
 function aggregatePeriod(dailySummary, dates) {
-  const dateSet = new Set(dates);
-  const TOTAL_ROOMS  = 17;
-  let cashRoom=0, onlineRoom=0, nonCash=0, food=0, compFood=0, occRoomDays=0;
-  let daysWithData = 0;
+  const dateSet    = new Set(dates);
+  const GUEST_ROOMS = 13;
+  const STAFF_ROOMS = 4;
+  let cashRoom=0, onlineRoom=0, nonCash=0, food=0, compFood=0;
+  let guestRoomDays=0, staffRoomDays=0, daysWithData=0;
 
   dailySummary.forEach(d => {
     if (!dateSet.has(d.date)) return;
-    cashRoom    += d.cashRoom    || 0;
-    onlineRoom  += d.onlineRoom  || 0;
-    nonCash     += d.nonCash     || 0;
-    food        += d.food        || 0;
-    compFood    += d.compFood    || 0;
-    occRoomDays += d.occupied    || 0;
+    cashRoom      += d.cashRoom      || 0;
+    onlineRoom    += d.onlineRoom    || 0;
+    nonCash       += d.nonCash       || 0;
+    food          += d.food          || 0;
+    compFood      += d.compFood      || 0;
+    guestRoomDays += d.guestOccupied || d.occupied || 0;
+    staffRoomDays += d.staffOccupied || 0;
     if ((d.cashRoom||0)+(d.onlineRoom||0)+(d.food||0)+(d.nonCash||0) > 0) daysWithData++;
   });
 
-  const total      = cashRoom + onlineRoom + food;
-  const days       = Math.max(daysWithData, 1);
-  const avgOcc     = Math.round((occRoomDays / (days * TOTAL_ROOMS)) * 100);
-  const revpar     = Math.round(total / (dates.length * TOTAL_ROOMS));
-  const foodPct    = total > 0 ? Math.round((food / total) * 100) : 0;
+  const total        = cashRoom + onlineRoom + food;
+  const periodDays   = Math.max(dates.length, 1);
+  const guestOccPct  = Math.round((guestRoomDays / (periodDays * GUEST_ROOMS)) * 100);
+  const staffOccPct  = Math.round((staffRoomDays / (periodDays * STAFF_ROOMS))  * 100);
+  const revpar       = Math.round(total / (periodDays * GUEST_ROOMS));
+  const foodPct      = total > 0 ? Math.round((food / total) * 100) : 0;
+  const avgGuestRate = guestRoomDays > 0
+    ? Math.round((cashRoom + onlineRoom) / guestRoomDays) : 0;
+  const opportunityCost = staffRoomDays * avgGuestRate;
 
-  return { cashRoom, onlineRoom, nonCash, food, compFood,
-           total, avgOcc, revpar, foodPct, daysRecorded: daysWithData };
+  return {
+    cashRoom, onlineRoom, nonCash, food, compFood, total,
+    guestRoomDays, staffRoomDays, guestOccPct, staffOccPct,
+    revpar, foodPct, daysRecorded: daysWithData,
+    avgGuestRate, opportunityCost,
+    avgOcc: guestOccPct,  // backwards compat
+  };
 }
 
 function renderDashboard(d) {
@@ -1258,12 +1320,12 @@ function renderDashboard(d) {
       <div class="kpi-sub">Non-cash internal: ${pkr(agg.nonCash)}</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-label">Avg Occupancy</div>
-      <div class="kpi-value">${agg.avgOcc}<span style="font-size:0.65em;color:var(--muted)">%</span></div>
+      <div class="kpi-label">Guest Occupancy (13 rooms)</div>
+      <div class="kpi-value">${agg.guestOccPct}<span style="font-size:0.65em;color:var(--muted)">%</span></div>
       <div class="occ-bar-wrap">
-        <div class="occ-bar-track"><div class="occ-bar-fill" style="width:${Math.min(agg.avgOcc,100)}%"></div></div>
+        <div class="occ-bar-track"><div class="occ-bar-fill" style="width:${Math.min(agg.guestOccPct,100)}%"></div></div>
       </div>
-      <div class="kpi-sub">${agg.daysRecorded} day${agg.daysRecorded!==1?'s':''} recorded</div>
+      <div class="kpi-sub">${agg.guestRoomDays} guest room nights · Staff: ${agg.staffOccPct}%</div>
     </div>
     <div class="kpi-card gold">
       <div class="kpi-label">RevPAR</div>
@@ -1427,6 +1489,136 @@ function renderDashboard(d) {
       }</div>
       <div class="kpi-sub">Avg across ${hist.length} months</div>
     </div>`;
+
+  // ── Occupancy breakdown panel ──
+  renderOccBreakdown(agg, period, d.mtd || {});
+}
+
+// ────────────────────────────────────────────────────────────────
+// OCCUPANCY BREAKDOWN PANEL
+// ────────────────────────────────────────────────────────────────
+function renderOccBreakdown(agg, period, mtd) {
+  const el = document.getElementById('occBreakdown');
+  const lbl = document.getElementById('occPeriodLabel');
+  if (!el) return;
+  if (lbl) lbl.textContent = '— ' + period.label;
+
+  const GUEST_ROOMS  = 13;
+  const STAFF_ROOMS  = 4;
+  const TOTAL_ROOMS  = 17;
+  const STAFF_ROOM_LIST = ['105','106','107','201'];
+  const ALL_ROOMS = ['101','102','103','104','105','106','107',
+                     '201','202','203','204','205','206','207','B1','B2'];
+
+  const guestOcc  = agg.guestRoomDays  || 0;
+  const staffOcc  = agg.staffRoomDays  || 0;
+  const guestPct  = agg.guestOccPct    || 0;
+  const staffPct  = agg.staffOccPct    || 0;
+  const oppCost   = agg.opportunityCost || 0;
+  const avgRate   = agg.avgGuestRate    || 0;
+
+  // Room visual — shows today's snapshot from mtd context
+  // (we approximate by showing guestPct rooms as occupied)
+  const approxGuestOcc = Math.round((guestPct / 100) * GUEST_ROOMS);
+  const roomDots = ALL_ROOMS.map(r => {
+    const isStaff = STAFF_ROOM_LIST.includes(r);
+    let cls, label;
+    if (isStaff) {
+      cls = 'occ-room-dot staff-perm'; label = r;
+    } else {
+      // fill guest rooms proportionally
+      const idx = ALL_ROOMS.filter(x => !STAFF_ROOM_LIST.includes(x)).indexOf(r);
+      cls = idx < approxGuestOcc ? 'occ-room-dot guest-occ' : 'occ-room-dot guest-empty';
+      label = r;
+    }
+    return `<div class="${cls}" title="Room ${r}">${r}</div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="occ-breakdown-grid">
+
+      <!-- Guest Rooms Block -->
+      <div class="occ-breakdown-block">
+        <div class="occ-bd-title navy">Guest Rooms (${GUEST_ROOMS} available)</div>
+        <div class="occ-bd-row">
+          <span class="occ-bd-label">Occupancy %</span>
+          <span class="occ-bd-val ${guestPct>=70?'green':guestPct>=40?'gold':'red'}">${guestPct}%</span>
+        </div>
+        <div class="occ-bd-row">
+          <span class="occ-bd-label">Room nights</span>
+          <span class="occ-bd-val">${guestOcc}</span>
+        </div>
+        <div class="occ-bd-row">
+          <span class="occ-bd-label">Avg rate / night</span>
+          <span class="occ-bd-val">${pkr(avgRate)}</span>
+        </div>
+        <div class="occ-bd-row">
+          <span class="occ-bd-label">Revenue</span>
+          <span class="occ-bd-val green">${pkr(agg.cashRoom + agg.onlineRoom)}</span>
+        </div>
+      </div>
+
+      <!-- Staff Rooms Block -->
+      <div class="occ-breakdown-block staff-block">
+        <div class="occ-bd-title blue">Permanent Staff Rooms (${STAFF_ROOMS} fixed)</div>
+        <div class="occ-bd-row">
+          <span class="occ-bd-label">Occupancy %</span>
+          <span class="occ-bd-val blue">${staffPct}%</span>
+        </div>
+        <div class="occ-bd-row">
+          <span class="occ-bd-label">Room nights</span>
+          <span class="occ-bd-val blue">${staffOcc}</span>
+        </div>
+        <div class="occ-bd-row">
+          <span class="occ-bd-label">Non-cash value</span>
+          <span class="occ-bd-val blue">${pkr(agg.nonCash)}</span>
+        </div>
+        <div class="occ-bd-row">
+          <span class="occ-bd-label">Rooms</span>
+          <span class="occ-bd-val blue" style="font-size:0.72rem">105 · 106 · 107 · 201</span>
+        </div>
+      </div>
+
+      <!-- Opportunity Cost Block -->
+      <div class="occ-breakdown-block impact-block">
+        <div class="occ-bd-title gold">Staff Room Impact</div>
+        <div class="occ-bd-row">
+          <span class="occ-bd-label">Staff room nights (period)</span>
+          <span class="occ-bd-val gold">${staffOcc}</span>
+        </div>
+        <div class="occ-bd-row">
+          <span class="occ-bd-label">Avg guest rate used</span>
+          <span class="occ-bd-val">${pkr(avgRate)}</span>
+        </div>
+        <div class="occ-bd-row">
+          <span class="occ-bd-label">Opportunity cost</span>
+          <span class="occ-bd-val ${oppCost>0?'red':''}">
+            ${oppCost > 0 ? pkr(oppCost) : avgRate === 0 ? 'No guest data yet' : pkr(0)}
+          </span>
+        </div>
+        <div style="margin-top:8px;font-size:0.68rem;color:var(--muted);line-height:1.5">
+          ${oppCost > 0
+            ? `If staff rooms were let to paying guests at the current avg rate, this period would generate an additional <b style="color:var(--navy)">${pkr(oppCost)}</b>.`
+            : 'No paying guest data in this period to calculate impact.'
+          }
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Room Visual -->
+    <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px">
+      <div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">
+        Room Layout — approx ${guestPct}% guest occupancy
+        <span style="margin-left:12px;font-weight:400">
+          <span style="display:inline-block;width:10px;height:10px;background:var(--navy);border-radius:2px;vertical-align:middle"></span> Guest (occupied)
+          <span style="display:inline-block;width:10px;height:10px;background:#e0ddd8;border-radius:2px;vertical-align:middle;margin-left:8px"></span> Guest (vacant)
+          <span style="display:inline-block;width:10px;height:10px;background:#2563eb;border-radius:2px;vertical-align:middle;margin-left:8px"></span> Staff (permanent)
+        </span>
+      </div>
+      <div class="occ-room-vis">${roomDots}</div>
+    </div>`;
+}
 }
 
 // ══════════════════════════════════════════════════════════
