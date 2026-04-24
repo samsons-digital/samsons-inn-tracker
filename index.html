@@ -51,6 +51,31 @@ body {
 .header-brand h1 { color: var(--white); font-size: 1rem; font-weight: 600; letter-spacing: 0.3px; }
 .header-brand span { color: var(--gold2); font-size: 0.78rem; }
 .header-right { display: flex; align-items: center; gap: 10px; }
+/* Sync pill */
+.sync-pill {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 20px; padding: 4px 12px 4px 8px;
+  font-size: 0.72rem; font-weight: 700; color: rgba(255,255,255,0.7);
+  transition: all 0.3s; cursor: default; white-space: nowrap;
+}
+.sync-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #6b7a8d; transition: background 0.3s;
+  flex-shrink: 0;
+}
+/* States */
+.sync-pill.syncing  { border-color: rgba(200,146,46,0.5); color: var(--gold2); }
+.sync-pill.syncing  .sync-dot { background: var(--gold); animation: syncPulse 0.8s ease-in-out infinite; }
+.sync-pill.ok       { border-color: rgba(46,125,82,0.5); color: #6fcf97; }
+.sync-pill.ok       .sync-dot { background: #27ae60; }
+.sync-pill.error    { border-color: rgba(192,57,43,0.5); color: #e57373; }
+.sync-pill.error    .sync-dot { background: var(--red); }
+@keyframes syncPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.75); }
+}
+
 .date-badge {
   background: rgba(255,255,255,0.1); color: var(--gold2);
   padding: 4px 12px; border-radius: 20px; font-size: 0.78rem;
@@ -647,6 +672,10 @@ tr:hover td { background: #fafaf7; }
   </div>
   <div class="header-right">
     <div class="date-badge" id="headerDate"></div>
+    <div class="sync-pill" id="syncPill" title="Last sync status">
+      <span class="sync-dot" id="syncDot"></span>
+      <span class="sync-label" id="syncLabel">Ready</span>
+    </div>
   </div>
 </header>
 
@@ -1011,18 +1040,63 @@ function setupNavTabs() {
 }
 
 // ══════════════════════════════════════════════════════════
+//  SYNC PILL
+// ══════════════════════════════════════════════════════════
+let syncTimer = null;
+
+function syncState(state, label) {
+  const pill  = document.getElementById('syncPill');
+  const lbl   = document.getElementById('syncLabel');
+  if (!pill || !lbl) return;
+  pill.className = 'sync-pill ' + state;
+  lbl.textContent = label;
+  // Auto-revert ok/error back to idle after 4 seconds
+  if (state === 'ok' || state === 'error') {
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(() => {
+      pill.className = 'sync-pill';
+      lbl.textContent = 'Ready';
+    }, 4000);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
 //  GAS FETCH
 // ══════════════════════════════════════════════════════════
 async function gasPost(payload) {
-  const res  = await fetch(SCRIPT_URL, {
-    method:  'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body:    JSON.stringify(payload),
-    redirect: 'follow',
-  });
-  const text = await res.text();
-  try { return JSON.parse(text); }
-  catch(e) { return { ok: false, error: 'Bad response: ' + text.substring(0, 120) }; }
+  syncState('syncing', 'Syncing…');
+  try {
+    const res  = await fetch(SCRIPT_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body:    JSON.stringify(payload),
+      redirect: 'follow',
+    });
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); }
+    catch(e) { data = { ok: false, error: 'Bad response: ' + text.substring(0, 120) }; }
+
+    if (data.ok) {
+      const action = payload.action || '';
+      const label  =
+        action === 'submitDay'              ? 'Saved ✓' :
+        action === 'appendCheckoutBreakfast'? 'Bfast Saved ✓' :
+        action === 'saveConfig'             ? 'Config Saved ✓' :
+        action === 'voidEntry'              ? 'Voided ✓' :
+        action === 'getDashboard'           ? 'Dashboard ✓' :
+        action === 'getLast7DaysLog'        ? 'Log Loaded ✓' :
+        action === 'getMonthlySummary'      ? 'Month Loaded ✓' :
+        'Synced ✓';
+      syncState('ok', label);
+    } else {
+      syncState('error', 'Error ✗');
+    }
+    return data;
+  } catch(err) {
+    syncState('error', 'No Connection ✗');
+    return { ok: false, error: err.message };
+  }
 }
 
 // ══════════════════════════════════════════════════════════
