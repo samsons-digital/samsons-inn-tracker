@@ -700,7 +700,82 @@ tr:hover td { background: #fafaf7; }
   .field-row { grid-template-columns: 1fr; }
   .field-row.three { grid-template-columns: 1fr; }
 }
-</style>
+
+/* ── F&B Only Button ── */
+.btn-fnb {
+  padding: 8px 18px; background: transparent;
+  border: 2px solid var(--gold); border-radius: 6px;
+  font-size: 0.82rem; font-weight: 800; color: var(--gold);
+  cursor: pointer; transition: all 0.2s; white-space: nowrap;
+}
+.btn-fnb:hover { background: var(--gold); color: var(--navy); }
+
+/* ── Modal ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(10,20,40,0.55); z-index: 500;
+  align-items: center; justify-content: center;
+  backdrop-filter: blur(2px);
+}
+.modal-overlay.open { display: flex; }
+.modal-card {
+  background: var(--white); border-radius: 10px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+  width: 90%; max-width: 620px;
+  max-height: 90vh; overflow-y: auto;
+  animation: modalIn 0.22s ease;
+}
+@keyframes modalIn {
+  from { transform: translateY(20px) scale(0.97); opacity: 0; }
+  to   { transform: translateY(0)    scale(1);    opacity: 1; }
+}
+.modal-header {
+  background: var(--navy); padding: 16px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-radius: 10px 10px 0 0;
+}
+.modal-title { color: var(--white); font-size: 0.95rem; font-weight: 800; }
+.modal-sub   { color: rgba(255,255,255,0.6); font-size: 0.72rem; margin-top: 2px; }
+.modal-close {
+  background: rgba(255,255,255,0.12); border: none; color: var(--white);
+  width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+  font-size: 0.78rem; display: grid; place-items: center;
+  transition: background 0.2s;
+}
+.modal-close:hover { background: rgba(255,255,255,0.25); }
+.modal-body   { padding: 20px; }
+.modal-footer {
+  padding: 14px 20px; background: #f7f6f3;
+  border-top: 1px solid var(--border);
+  display: flex; justify-content: flex-end; gap: 10px;
+  border-radius: 0 0 10px 10px;
+}
+
+/* ── Same-Day Stay ── */
+.same-day-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0 6px; margin-top: 6px;
+  border-top: 1px dashed var(--border); gap: 10px;
+}
+.same-day-label {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.78rem; font-weight: 700; color: var(--navy);
+}
+.same-day-icon { font-size: 0.9rem; }
+.same-day-hint {
+  font-size: 0.67rem; color: var(--muted); font-weight: 400;
+}
+.same-day-fields {
+  background: #fff8ec; border-radius: 6px;
+  padding: 10px 10px 4px; margin-bottom: 8px;
+  border: 1px solid rgba(200,146,46,0.25);
+}
+.same-day-badge {
+  display: inline-block; background: var(--gold); color: var(--navy);
+  padding: 1px 7px; border-radius: 3px; font-size: 0.66rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.4px; vertical-align: middle;
+  margin-left: 6px;
+}
 </head>
 <body>
 
@@ -834,7 +909,72 @@ tr:hover td { background: #fafaf7; }
           <input type="text" id="submittedBy" placeholder="Your name" value="">
         </div>
         <div class="totals" id="liveTotals">—</div>
+        <button class="btn-fnb" onclick="openFnbModal()">+ F&B Only</button>
         <button class="btn-submit" id="btnSubmit" onclick="submitDay()">Submit Day</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- F&B ONLY MODAL -->
+  <div class="modal-overlay" id="fnbModal" onclick="closeFnbModal(event)">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">F&amp;B Only Entry</div>
+          <div class="modal-sub">No room stay — food &amp; beverage sales only</div>
+        </div>
+        <button class="modal-close" onclick="closeFnbModalDirect()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="field-row">
+          <div class="field">
+            <label>Date</label>
+            <input type="date" id="fnbDate">
+          </div>
+          <div class="field">
+            <label>Description / Party Name</label>
+            <input type="text" id="fnbDesc" placeholder="e.g. Walk-in lunch, Staff meal, Event">
+          </div>
+        </div>
+        <div class="field-row three" style="margin-top:8px">
+          <div class="field">
+            <label>Regular Food (PKR)</label>
+            <input type="number" class="money" id="fnbRegular" value="0" min="0" step="100">
+          </div>
+          <div class="field">
+            <label>Company Food (PKR)</label>
+            <input type="number" class="money" id="fnbCompany" value="0" min="0" step="100">
+          </div>
+          <div class="field">
+            <label>Restaurant Walk-in (PKR)</label>
+            <input type="number" class="money" id="fnbResto" value="0" min="0" step="100">
+          </div>
+        </div>
+        <div style="background:#f0f4ff;border-radius:6px;padding:10px 12px;margin-top:8px">
+          <div class="money-label" style="color:#2563eb;margin-bottom:6px">F&amp;F Discounted Food</div>
+          <div class="field-row three">
+            <div class="field">
+              <label>Billed (PKR)</label>
+              <input type="number" class="money" id="fnbFFBilled" value="0" min="0" step="50"
+                     oninput="calcFnbFFSaving()">
+            </div>
+            <div class="field">
+              <label>Discount %</label>
+              <input type="number" class="money" id="fnbFFDiscount" value="0" min="0" max="100" step="5"
+                     oninput="calcFnbFFSaving()">
+            </div>
+            <div class="field">
+              <label>Saving (auto)</label>
+              <input type="number" class="money" id="fnbFFSaving" value="0" readonly
+                     style="background:#e8f0fe;color:#2563eb;cursor:default">
+            </div>
+          </div>
+        </div>
+        <div id="fnbResult" style="margin-top:10px"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeFnbModalDirect()">Cancel</button>
+        <button class="btn-submit" id="fnbSubmitBtn" onclick="submitFnbEntry()">Save F&amp;B Entry</button>
       </div>
     </div>
   </div>
@@ -1656,6 +1796,7 @@ function buildRoomGrid() {
       ROOM_STATES[room] = {
         occupied: isStaff,
         isStaff,
+        sameDay: false,
         data: {
           room, guestName: defaultName, pax: isStaff ? 1 : 0,
           contact: '', guestType: isStaff ? 'Staff – NonCash' : '',
@@ -1663,6 +1804,7 @@ function buildRoomGrid() {
           cashRoom: 0, onlineRoom: 0, nonCashRoom: isStaff ? rate : 0,
           regularFood: 0, ffFoodBilled: 0, ffFoodDiscount: 0,
           companyFood: 0, restoFood: 0, checkoutBfast: 0,
+          sameDay: false, checkinTime: '', checkoutTime: '',
         }
       };
 
@@ -1722,7 +1864,30 @@ function buildRoomCard(room, isStaff, defaultName, rate) {
         </div>
       </div>
 
-      <div style="margin-top:8px;">
+      <!-- Same-Day Stay Toggle -->
+      <div class="same-day-row" id="samedayRow-${room}">
+        <div class="same-day-label">
+          <span class="same-day-icon">🕐</span>
+          <span>Same-Day Stay</span>
+          <span class="same-day-hint">Late check-in &amp; early checkout on same calendar date</span>
+        </div>
+        <button class="room-toggle" id="samedayToggle-${room}"
+                onclick="toggleSameDay('${room}')"></button>
+      </div>
+      <div class="same-day-fields" id="samedayFields-${room}" style="display:none">
+        <div class="field-row">
+          <div class="field">
+            <label>Check-in Time</label>
+            <input type="time" id="checkinTime-${room}" value="01:00"
+                   oninput="updateField('${room}','checkinTime',this.value)">
+          </div>
+          <div class="field">
+            <label>Checkout Time</label>
+            <input type="time" id="checkoutTime-${room}" value="11:00"
+                   oninput="updateField('${room}','checkoutTime',this.value)">
+          </div>
+        </div>
+      </div>
         <div class="money-label">Room Revenue</div>
         <div class="money-group" style="margin-bottom:8px">
           <div class="field">
@@ -2140,7 +2305,131 @@ function renderSummaryTable(rows, container) {
 }
 
 // ══════════════════════════════════════════════════════════
-//  TOAST
+//  SAME-DAY STAY TOGGLE
+// ══════════════════════════════════════════════════════════
+function toggleSameDay(room) {
+  const state  = ROOM_STATES[room];
+  if (!state) return;
+  state.sameDay         = !state.sameDay;
+  state.data.sameDay    = state.sameDay;
+  const toggle = document.getElementById('samedayToggle-' + room);
+  const fields = document.getElementById('samedayFields-'  + room);
+  const header = document.getElementById('room-card-'      + room)
+                          ?.querySelector('.room-status');
+  if (toggle) toggle.className = 'room-toggle' + (state.sameDay ? ' on' : '');
+  if (fields) fields.style.display = state.sameDay ? 'block' : 'none';
+  // If enabling, seed default times
+  if (state.sameDay) {
+    const ci = document.getElementById('checkinTime-'  + room);
+    const co = document.getElementById('checkoutTime-' + room);
+    if (ci && !ci.value) ci.value = '01:00';
+    if (co && !co.value) co.value = '11:00';
+    state.data.checkinTime  = ci?.value || '01:00';
+    state.data.checkoutTime = co?.value || '11:00';
+  } else {
+    state.data.checkinTime  = '';
+    state.data.checkoutTime = '';
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  F&B ONLY MODAL
+// ══════════════════════════════════════════════════════════
+function openFnbModal() {
+  const modal = document.getElementById('fnbModal');
+  if (!modal) return;
+  // Pre-fill date from submit form
+  const submitDate = document.getElementById('submitDate')?.value;
+  if (submitDate) document.getElementById('fnbDate').value = submitDate;
+  // Clear fields
+  ['fnbDesc','fnbRegular','fnbCompany','fnbResto','fnbFFBilled','fnbFFDiscount','fnbFFSaving']
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = el.type === 'number' ? 0 : '';
+    });
+  document.getElementById('fnbResult').innerHTML = '';
+  const btn = document.getElementById('fnbSubmitBtn');
+  if (btn) { btn.disabled = false; btn.textContent = 'Save F&B Entry'; }
+  modal.classList.add('open');
+}
+
+function closeFnbModal(event) {
+  // Only close if clicking the overlay itself, not the card
+  if (event.target === document.getElementById('fnbModal')) {
+    closeFnbModalDirect();
+  }
+}
+
+function closeFnbModalDirect() {
+  document.getElementById('fnbModal')?.classList.remove('open');
+}
+
+function calcFnbFFSaving() {
+  const billed   = parseFloat(document.getElementById('fnbFFBilled')?.value)   || 0;
+  const discount = parseFloat(document.getElementById('fnbFFDiscount')?.value) || 0;
+  const savingEl = document.getElementById('fnbFFSaving');
+  if (!savingEl) return;
+  let saving = 0;
+  if (discount > 0 && billed > 0) {
+    const fullValue = Math.round(billed / (1 - discount / 100));
+    saving = fullValue - billed;
+  }
+  savingEl.value = saving;
+}
+
+async function submitFnbEntry() {
+  const date       = document.getElementById('fnbDate').value;
+  const desc       = document.getElementById('fnbDesc').value.trim() || 'F&B Walk-in';
+  const regular    = parseFloat(document.getElementById('fnbRegular').value)   || 0;
+  const company    = parseFloat(document.getElementById('fnbCompany').value)   || 0;
+  const resto      = parseFloat(document.getElementById('fnbResto').value)     || 0;
+  const ffBilled   = parseFloat(document.getElementById('fnbFFBilled').value)  || 0;
+  const ffDiscount = parseFloat(document.getElementById('fnbFFDiscount').value)|| 0;
+  const ffSaving   = parseFloat(document.getElementById('fnbFFSaving').value)  || 0;
+  const submittedBy= document.getElementById('submittedBy')?.value.trim() || 'Portal';
+
+  if (!date) { toast('Select a date for the F&B entry', 'error'); return; }
+  const total = regular + company + resto + ffBilled;
+  if (total <= 0) { toast('Enter at least one food amount', 'error'); return; }
+
+  const btn    = document.getElementById('fnbSubmitBtn');
+  const result = document.getElementById('fnbResult');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  // F&B-only entries use Room = "F&B" as a reserved identifier
+  const entry = {
+    room:         'F&B',
+    guestName:    desc,
+    pax:          0,
+    contact:      '',
+    guestType:    'F&B Only',
+    comments:     'F&B only entry — no room stay',
+    cashRoom:     0, onlineRoom: 0, nonCashRoom: 0,
+    regularFood:  regular,
+    ffFoodBilled: ffBilled,
+    ffFoodDiscount: ffDiscount,
+    companyFood:  company,
+    restoFood:    resto,
+    checkoutBfast:0,
+    sameDay:      false, checkinTime: '', checkoutTime: '',
+  };
+
+  try {
+    const r = await gasPost({ action: 'submitDay', date, entries: [entry], submittedBy });
+    if (r.ok) {
+      result.innerHTML = `<div class="co-success">✓ F&B entry saved — PKR ${Number(total).toLocaleString()} on ${formatDisplayDate(date)}</div>`;
+      toast(`✓ F&B entry saved for ${formatDisplayDate(date)}`, 'success');
+      btn.textContent = '✓ Saved';
+      setTimeout(() => closeFnbModalDirect(), 2000);
+    } else {
+      result.innerHTML = `<div class="co-error">✗ ${r.error}</div>`;
+      btn.disabled = false; btn.textContent = 'Save F&B Entry';
+    }
+  } catch(e) {
+    result.innerHTML = `<div class="co-error">✗ Network error</div>`;
+    btn.disabled = false; btn.textContent = 'Save F&B Entry';
+  }
+}
 // ══════════════════════════════════════════════════════════
 function toast(msg, type = 'info') {
   const area = document.getElementById('toastArea');
