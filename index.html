@@ -8,9 +8,9 @@
 /* ── Reset & Base ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --navy:    #1a3a5c;
+  --navy:    #1B2C4D;
   --navy2:   #0f2540;
-  --gold:    #c8922e;
+  --gold:    #B8922E;
   --gold2:   #e8b04a;
   --cream:   #f7f4ef;
   --white:   #ffffff;
@@ -20,11 +20,11 @@
   --red:     #c0392b;
   --blue:    #2563eb;
   --shadow:  0 2px 12px rgba(26,58,92,0.13);
-  --radius:  8px;
+  --radius:  12px;
 }
 html { font-size: 15px; }
 body {
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: Arial, Helvetica, sans-serif;
   background: var(--cream);
   color: #1c2b3a;
   min-height: 100vh;
@@ -514,7 +514,7 @@ tr:hover td { background: #fafaf7; }
 .day-block.not-submitted { border-left: 4px solid var(--red); }
 .day-block.today-block { border-left: 4px solid var(--gold); }
 
-/* Summary row — always visible, clickable */
+/* Summary row - always visible, clickable */
 .day-summary {
   display: grid;
   grid-template-columns: 180px 1fr 1fr 1fr 120px 100px;
@@ -776,9 +776,40 @@ tr:hover td { background: #fafaf7; }
   text-transform: uppercase; letter-spacing: 0.4px; vertical-align: middle;
   margin-left: 6px;
 }
+
+/* ── Access gate (v2.1) ── */
+body.locked .header, body.locked .tab-bar, body.locked main, body.locked .page, body.locked .toast-area { display: none !important; }
+#gate { position: fixed; inset: 0; background: var(--navy); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+.g-box { background: #fff; border-radius: 18px; padding: 30px 28px 22px; width: 100%; max-width: 340px; text-align: center; border-top: 5px solid var(--gold); box-shadow: 0 20px 50px rgba(0,0,0,.3); }
+.g-org { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); font-weight: bold; }
+.g-title { font-size: 21px; font-weight: bold; color: var(--navy); margin-top: 8px; }
+.g-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.g-dots { display: flex; justify-content: center; gap: 14px; margin: 22px 0 18px; }
+.g-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--navy); }
+.g-dot.on { background: var(--navy); }
+.g-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.g-key { height: 56px; border-radius: 12px; border: 1px solid var(--border); background: #F9FAFB; font-family: inherit; font-size: 20px; font-weight: bold; color: var(--navy); cursor: pointer; }
+.g-key:active { background: #FFF8E6; }
+.g-key.sm { font-size: 13px; color: var(--muted); }
+.g-msg { min-height: 20px; margin-top: 14px; font-size: 12px; font-weight: bold; color: var(--red); }
+.g-msg.busy { color: var(--muted); }
+.g-ver { margin-top: 10px; font-size: 10px; color: var(--muted); letter-spacing: .06em; }
+.lock-btn { background: var(--gold); color: #fff; border: none; border-radius: 10px; padding: 7px 14px; font-family: inherit; font-weight: bold; font-size: 12px; cursor: pointer; }
 </style>
 </head>
-<body>
+<body class="locked">
+
+<div id="gate">
+  <div class="g-box">
+    <div class="g-org">Samsons Group of Companies</div>
+    <div class="g-title">Samsons Inn Tracker</div>
+    <div class="g-sub">Restricted access, enter the PIN</div>
+    <div class="g-dots" id="gDots"></div>
+    <div class="g-pad" id="gPad"></div>
+    <div class="g-msg" id="gMsg"></div>
+    <div class="g-ver">SAMSONS-INN v2.1</div>
+  </div>
+</div>
 
 <!-- ── Header ── -->
 <header class="header">
@@ -795,6 +826,7 @@ tr:hover td { background: #fafaf7; }
       <span class="sync-dot" id="syncDot"></span>
       <span class="sync-label" id="syncLabel">Ready</span>
     </div>
+    <button class="lock-btn" onclick="lockPortal('')">Lock</button>
   </div>
 </header>
 
@@ -829,7 +861,7 @@ tr:hover td { background: #fafaf7; }
 
     <!-- Today label -->
     <div class="section-title">
-      <span id="periodHeading">Today</span> —
+      <span id="periodHeading">Today</span> -
       <span id="dashTodayDate" style="font-weight:400;text-transform:none;letter-spacing:0"></span>
     </div>
     <div class="kpi-grid" id="kpiGrid">
@@ -839,7 +871,7 @@ tr:hover td { background: #fafaf7; }
     <!-- Row 2: 7-day chart + MTD panel -->
     <div class="dash-row" style="margin-bottom:20px">
       <div class="dash-card">
-        <div class="section-title">Revenue — Last 7 Days</div>
+        <div class="section-title">Revenue - Last 7 Days</div>
         <div class="legend">
           <div class="legend-item"><div class="legend-dot" style="background:var(--navy)"></div>Room</div>
           <div class="legend-item"><div class="legend-dot" style="background:var(--gold);opacity:0.75"></div>Food</div>
@@ -856,7 +888,7 @@ tr:hover td { background: #fafaf7; }
 
     <!-- Row 3: Monthly history chart (full width) -->
     <div class="dash-card" style="margin-bottom:20px">
-      <div class="section-title">Monthly Revenue — All Time</div>
+      <div class="section-title">Monthly Revenue - All Time</div>
       <div class="legend">
         <div class="legend-item"><div class="legend-dot" style="background:var(--navy)"></div>Revenue (cash + online)</div>
         <div class="legend-item"><div class="legend-dot" style="background:var(--gold)"></div>Current month</div>
@@ -881,7 +913,7 @@ tr:hover td { background: #fafaf7; }
         <div id="occByMonth"><div class="loading-msg">Loading…</div></div>
       </div>
       <div class="dash-card">
-        <div class="section-title">Top Rooms — All Time</div>
+        <div class="section-title">Top Rooms - All Time</div>
         <div class="room-rank" id="topRooms"><div class="loading-msg">Loading…</div></div>
       </div>
       <div class="dash-card">
@@ -909,7 +941,7 @@ tr:hover td { background: #fafaf7; }
           <label>Submitted by</label>
           <input type="text" id="submittedBy" placeholder="Your name" value="">
         </div>
-        <div class="totals" id="liveTotals">—</div>
+        <div class="totals" id="liveTotals">-</div>
         <button class="btn-fnb" onclick="openFnbModal()">+ F&B Only</button>
         <button class="btn-submit" id="btnSubmit" onclick="submitDay()">Submit Day</button>
       </div>
@@ -922,7 +954,7 @@ tr:hover td { background: #fafaf7; }
       <div class="modal-header">
         <div>
           <div class="modal-title">F&amp;B Only Entry</div>
-          <div class="modal-sub">No room stay — food &amp; beverage sales only</div>
+          <div class="modal-sub">No room stay - food &amp; beverage sales only</div>
         </div>
         <button class="modal-close" onclick="closeFnbModalDirect()">✕</button>
       </div>
@@ -993,8 +1025,8 @@ tr:hover td { background: #fafaf7; }
       </div>
 
       <div style="padding:20px">
-        <!-- Step 1 — select date + room -->
-        <div class="section-title">Step 1 — Select the Stay Date & Room</div>
+        <!-- Step 1 - select date + room -->
+        <div class="section-title">Step 1 - Select the Stay Date & Room</div>
         <div class="co-step-row">
           <div class="field">
             <label>Stay Date (the night before checkout)</label>
@@ -1003,7 +1035,7 @@ tr:hover td { background: #fafaf7; }
           <div class="field">
             <label>Room Number</label>
             <select id="coRoom" onchange="coReset()">
-              <option value="">— Select room —</option>
+              <option value="">- Select room -</option>
               <option value="101">101</option><option value="102">102</option>
               <option value="103">103</option><option value="104">104</option>
               <option value="105">105</option><option value="106">106</option>
@@ -1019,13 +1051,13 @@ tr:hover td { background: #fafaf7; }
           </div>
         </div>
 
-        <!-- Step 2 — preview existing record -->
+        <!-- Step 2 - preview existing record -->
         <div id="coPreview" style="display:none">
-          <div class="section-title" style="margin-top:20px">Step 2 — Existing Record Preview</div>
+          <div class="section-title" style="margin-top:20px">Step 2 - Existing Record Preview</div>
           <div class="co-preview-card" id="coPreviewCard"></div>
 
-          <!-- Step 3 — add breakfast -->
-          <div class="section-title" style="margin-top:20px">Step 3 — Add Checkout Breakfast</div>
+          <!-- Step 3 - add breakfast -->
+          <div class="section-title" style="margin-top:20px">Step 3 - Add Checkout Breakfast</div>
           <div class="co-step-row" style="align-items:flex-end">
             <div class="field">
               <label>Breakfast Amount (PKR)</label>
@@ -1054,7 +1086,7 @@ tr:hover td { background: #fafaf7; }
   <div class="page" id="page-log">
     <div class="log-header-bar">
       <div>
-        <div style="font-size:0.88rem;font-weight:800;color:var(--navy)">Last 7 Days — Submission Monitor</div>
+        <div style="font-size:0.88rem;font-weight:800;color:var(--navy)">Last 7 Days - Submission Monitor</div>
         <div style="font-size:0.72rem;color:var(--muted);margin-top:2px">Newest first · Auto-loads on tab open · Click any day to expand room detail</div>
       </div>
       <button class="btn-secondary" onclick="loadLast7Log()" id="logRefreshBtn">↻ Refresh</button>
@@ -1124,7 +1156,7 @@ tr:hover td { background: #fafaf7; }
         <div class="cfg-card">
           <div class="cfg-card-header">
             <div class="cfg-card-title">Food Price Reference</div>
-            <div class="cfg-card-sub">Standard menu prices (PKR) — used as reference when entering food revenue</div>
+            <div class="cfg-card-sub">Standard menu prices (PKR) - used as reference when entering food revenue</div>
           </div>
           <div id="cfgFoodBody"><div class="loading-msg"><div class="spinner"></div></div></div>
           <div class="cfg-card-footer">
@@ -1141,7 +1173,7 @@ tr:hover td { background: #fafaf7; }
           </div>
           <div id="cfgTypesBody"><div class="loading-msg"><div class="spinner"></div></div></div>
           <div class="cfg-card-footer" style="color:var(--muted);font-size:0.75rem">
-            Read-only — edit in Google Sheets → Config tab → GUEST_TYPES section
+            Read-only - edit in Google Sheets → Config tab → GUEST_TYPES section
           </div>
         </div>
 
@@ -1153,7 +1185,7 @@ tr:hover td { background: #fafaf7; }
           </div>
           <div id="cfgRoomsBody"><div class="loading-msg"><div class="spinner"></div></div></div>
           <div class="cfg-card-footer" style="color:var(--muted);font-size:0.75rem">
-            Read-only — edit in Google Sheets → Config tab → ROOMS section
+            Read-only - edit in Google Sheets → Config tab → ROOMS section
           </div>
         </div>
 
@@ -1169,7 +1201,10 @@ tr:hover td { background: #fafaf7; }
 //  CONFIG  – Replace SCRIPT_URL after deploying GAS
 // ══════════════════════════════════════════════════════════
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw8dVmQ0XHWhyodgHYziGa9kPZWM8aOanynrHZQBMLznWIWCS3LaeTH6RJWxTVA8CP-/exec';
-const PIN_HASH   = '1234';   // simple numeric PIN; replace with SHA for production
+const TOKEN_KEY  = 'mjsr_inn_token';   // session token, the PIN is checked on the server
+let TOKEN = null;
+function store(k, v) { try { if (v === null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, v); } catch (e) {} }
+function recall(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }
 
 // ══════════════════════════════════════════════════════════
 //  STATE
@@ -1184,10 +1219,56 @@ let DASHBOARD_DATA = null;
 document.addEventListener('DOMContentLoaded', () => {
   setDateFields();
   setupNavTabs();
+  document.getElementById('submitDate').addEventListener('change', () => buildRoomGrid());
+  buildGate();
+  TOKEN = recall(TOKEN_KEY);
+  if (TOKEN) openPortal(); else lockPortal('');
+});
+
+// ══════════════════════════════════════════════════════════
+//  ACCESS GATE (PIN checked on the server, 6 hour session)
+// ══════════════════════════════════════════════════════════
+let GATE_PIN = '', GATE_BUSY = false, PORTAL_LOADED = false;
+function buildGate() {
+  let dots = ''; for (let i = 0; i < 4; i++) dots += '<div class="g-dot" id="gd' + i + '"></div>';
+  document.getElementById('gDots').innerHTML = dots;
+  const keys = ['1','2','3','4','5','6','7','8','9','CLR','0','DEL'];
+  document.getElementById('gPad').innerHTML = keys.map(k => '<button class="g-key' + (k.length > 1 ? ' sm' : '') + '" data-k="' + k + '">' + (k === 'DEL' ? '&#9003;' : k) + '</button>').join('');
+  document.getElementById('gPad').onclick = e => { const b = e.target.closest('.g-key'); if (b) gateKey(b.dataset.k); };
+  document.addEventListener('keydown', e => {
+    if (document.getElementById('gate').style.display === 'none') return;
+    if (/^[0-9]$/.test(e.key)) gateKey(e.key); else if (e.key === 'Backspace') gateKey('DEL');
+  });
+}
+function gateDots() { for (let i = 0; i < 4; i++) document.getElementById('gd' + i).className = 'g-dot' + (i < GATE_PIN.length ? ' on' : ''); }
+function gateMsg(t, busy) { const m = document.getElementById('gMsg'); m.textContent = t || ''; m.className = 'g-msg' + (busy ? ' busy' : ''); }
+function gateKey(k) {
+  if (GATE_BUSY) return;
+  if (k === 'CLR') GATE_PIN = ''; else if (k === 'DEL') GATE_PIN = GATE_PIN.slice(0, -1); else if (GATE_PIN.length < 4) GATE_PIN += k;
+  gateDots(); gateMsg('');
+  if (GATE_PIN.length === 4) gateUnlock();
+}
+async function gateUnlock() {
+  GATE_BUSY = true; gateMsg('Checking PIN...', true);
+  const r = await gasPost({ action: 'unlock', pin: GATE_PIN });
+  GATE_BUSY = false; GATE_PIN = ''; gateDots();
+  if (!r.ok) { gateMsg(r.error || 'Incorrect PIN. Please try again.'); return; }
+  TOKEN = r.token; store(TOKEN_KEY, TOKEN); openPortal();
+}
+function openPortal() {
+  document.getElementById('gate').style.display = 'none';
+  document.body.classList.remove('locked');
+  gateMsg('');
   loadConfig();
   loadDashboard();
-  document.getElementById('submitDate').addEventListener('change', () => buildRoomGrid());
-});
+}
+function lockPortal(msg) {
+  TOKEN = null; store(TOKEN_KEY, null);
+  if (typeof lockConfig === 'function') lockConfig();
+  document.body.classList.add('locked');
+  document.getElementById('gate').style.display = 'flex';
+  GATE_PIN = ''; gateDots(); gateMsg(msg || '');
+}
 
 function setDateFields() {
   const today = todayISO();
@@ -1257,17 +1338,28 @@ function syncState(state, label) {
 // ══════════════════════════════════════════════════════════
 async function gasPost(payload) {
   syncState('syncing', 'Syncing…');
+  if (payload.action !== 'unlock') payload.token = TOKEN;
   try {
-    const res  = await fetch(SCRIPT_URL, {
-      method:  'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body:    JSON.stringify(payload),
-      redirect: 'follow',
-    });
+    let res = null, lastErr = null;
+    for (const wait of [0, 1500, 3000]) {
+      if (wait) await new Promise(r => setTimeout(r, wait));
+      try {
+        res = await fetch(SCRIPT_URL, {
+          method:  'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body:    JSON.stringify(payload),
+          redirect: 'follow',
+        });
+        if (res.ok) break;
+        lastErr = new Error('HTTP ' + res.status); res = null;
+      } catch (e) { lastErr = e; res = null; }
+    }
+    if (!res) throw lastErr || new Error('No response');
     const text = await res.text();
     let data;
     try { data = JSON.parse(text); }
     catch(e) { data = { ok: false, error: 'Bad response: ' + text.substring(0, 120) }; }
+    if (data.auth) { lockPortal('Your session has ended. Enter the PIN again.'); syncState('error', 'Locked'); return data; }
 
     if (data.ok) {
       const action = payload.action || '';
@@ -1446,17 +1538,17 @@ function renderDashboard(d) {
 
   document.getElementById('kpiGrid').innerHTML = `
     <div class="kpi-card gold">
-      <div class="kpi-label">${period.label} — Cash Revenue</div>
+      <div class="kpi-label">${period.label} - Cash Revenue</div>
       <div class="kpi-value pkr">${Number(agg.cashRoom).toLocaleString()}</div>
       <div class="kpi-sub">Room + Food combined</div>
     </div>
     <div class="kpi-card blue">
-      <div class="kpi-label">${period.label} — Online Revenue</div>
+      <div class="kpi-label">${period.label} - Online Revenue</div>
       <div class="kpi-value pkr">${Number(agg.onlineRoom).toLocaleString()}</div>
       <div class="kpi-sub">Bank transfer / online payments</div>
     </div>
     <div class="kpi-card green">
-      <div class="kpi-label">${period.label} — Total Guest Revenue</div>
+      <div class="kpi-label">${period.label} - Total Guest Revenue</div>
       <div class="kpi-value pkr">${Number(agg.total).toLocaleString()}</div>
       <div class="kpi-sub">Non-cash internal: ${pkr(agg.nonCash)}</div>
     </div>
@@ -1512,7 +1604,7 @@ function renderDashboard(d) {
   document.getElementById('mtdPanel').innerHTML = `
     <div style="display:flex;flex-direction:column;gap:12px">
       <div>
-        <div class="kpi-label">This Month — Total Revenue</div>
+        <div class="kpi-label">This Month - Total Revenue</div>
         <div class="kpi-value pkr" style="font-size:1.3rem">${Number(mtd.total||0).toLocaleString()}</div>
         <div class="kpi-sub">${mtd.daysRecorded||0} days recorded</div>
       </div>
@@ -1626,7 +1718,7 @@ function renderDashboard(d) {
       <div class="kpi-value pkr" style="font-size:1.1rem">${
         hist.length
           ? Number(Math.round(hist.reduce((s,m)=>s+(m.revpar||0),0)/hist.length)).toLocaleString()
-          : '—'
+          : '-'
       }</div>
       <div class="kpi-sub">Avg across ${hist.length} months</div>
     </div>`;
@@ -1642,7 +1734,7 @@ function renderOccBreakdown(agg, period, mtd) {
   const el = document.getElementById('occBreakdown');
   const lbl = document.getElementById('occPeriodLabel');
   if (!el) return;
-  if (lbl) lbl.textContent = '— ' + period.label;
+  if (lbl) lbl.textContent = '- ' + period.label;
 
   const GUEST_ROOMS  = 13;
   const STAFF_ROOMS  = 4;
@@ -1658,7 +1750,7 @@ function renderOccBreakdown(agg, period, mtd) {
   const oppCost   = agg.opportunityCost || 0;
   const avgRate   = agg.avgGuestRate    || 0;
 
-  // Room visual — shows today's snapshot from mtd context
+  // Room visual - shows today's snapshot from mtd context
   // (we approximate by showing guestPct rooms as occupied)
   const approxGuestOcc = Math.round((guestPct / 100) * GUEST_ROOMS);
   const roomDots = ALL_ROOMS.map(r => {
@@ -1750,7 +1842,7 @@ function renderOccBreakdown(agg, period, mtd) {
     <!-- Room Visual -->
     <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px">
       <div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">
-        Room Layout — approx ${guestPct}% guest occupancy
+        Room Layout - approx ${guestPct}% guest occupancy
         <span style="margin-left:12px;font-weight:400">
           <span style="display:inline-block;width:10px;height:10px;background:var(--navy);border-radius:2px;vertical-align:middle"></span> Guest (occupied)
           <span style="display:inline-block;width:10px;height:10px;background:#e0ddd8;border-radius:2px;vertical-align:middle;margin-left:8px"></span> Guest (vacant)
@@ -1854,7 +1946,7 @@ function buildRoomCard(room, isStaff, defaultName, rate) {
         <div class="field">
           <label>Guest Type</label>
           <select id="type-${room}" onchange="onTypeChange('${room}',this.value)">
-            <option value="">— Select —</option>${typeOptions}
+            <option value="">- Select -</option>${typeOptions}
           </select>
         </div>
       </div>
@@ -1917,7 +2009,7 @@ function buildRoomCard(room, isStaff, defaultName, rate) {
         <!-- Regular guest food -->
         <div class="field-row" style="margin-bottom:6px">
           <div class="field">
-            <label>Regular Food — Cash</label>
+            <label>Regular Food - Cash</label>
             <input type="number" class="money" id="regularFood-${room}" value="0" min="0" step="100"
                    oninput="updateNum('${room}','regularFood',this.value)">
           </div>
@@ -1928,7 +2020,7 @@ function buildRoomCard(room, isStaff, defaultName, rate) {
           </div>
         </div>
 
-        <!-- F&F food — shows always but labelled -->
+        <!-- F&F food - shows always but labelled -->
         <div style="background:#f0f4ff;border-radius:6px;padding:8px 10px;margin-bottom:6px">
           <div class="money-label" style="color:#2563eb;margin-bottom:6px">F&F Discounted Food <span class="noncash-badge" style="background:#dbeafe;color:#2563eb">F&F RATE</span></div>
           <div class="field-row three">
@@ -1959,7 +2051,7 @@ function buildRoomCard(room, isStaff, defaultName, rate) {
           </div>
           <div class="field">
             <label style="color:var(--muted)">Checkout Bfast → use Checkout tab</label>
-            <input type="text" class="money" value="— add via Checkout tab —"
+            <input type="text" class="money" value="- add via Checkout tab -"
                    readonly style="background:#f7f4ef;color:var(--muted);font-size:0.72rem;cursor:default">
           </div>
         </div>
@@ -2079,7 +2171,7 @@ async function submitDay() {
 }
 
 // ══════════════════════════════════════════════════════════
-//  LOG — 7-DAY SUMMARY
+//  LOG - 7-DAY SUMMARY
 // ══════════════════════════════════════════════════════════
 async function loadLast7Log() {
   const container = document.getElementById('log7Container');
@@ -2092,7 +2184,7 @@ async function loadLast7Log() {
     if (!r.ok) { container.innerHTML = `<p style="color:var(--red)">Error: ${r.error}</p>`; return; }
     renderLast7Log(r.days, container);
   } catch(e) {
-    container.innerHTML = '<p style="color:var(--red)">Network error — check connection.</p>';
+    container.innerHTML = '<p style="color:var(--red)">Network error - check connection.</p>';
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '↻ Refresh'; }
   }
@@ -2189,13 +2281,13 @@ function renderLast7Log(days, container) {
             if (k === 'Room') return `<td class="td-room">${val}</td>`;
             if (pkrCols.has(k)) {
               const n = parseFloat(val) || 0;
-              return `<td class="td-pkr ${n===0?'zero':''}">${n>0?Number(n).toLocaleString():'—'}</td>`;
+              return `<td class="td-pkr ${n===0?'zero':''}">${n>0?Number(n).toLocaleString():'-'}</td>`;
             }
             if (k === 'Guest_Type') {
               const cls = isStaff ? 'staff' : (e.Guest_Type||'').includes('F&F') ? 'ff' : 'guest';
-              return `<td><span class="badge ${cls}">${val||'—'}</span></td>`;
+              return `<td><span class="badge ${cls}">${val||'-'}</span></td>`;
             }
-            return `<td>${val||'—'}</td>`;
+            return `<td>${val||'-'}</td>`;
           }).join('') + '</tr>';
       });
 
@@ -2281,24 +2373,24 @@ function renderSummaryTable(rows, container) {
       if (k === 'Rooms_Occupied') return `<td style="text-align:center">${parseInt(row[k])||0}</td>`;
       if (k === 'FF_Food_Saving') {
         const n = parseFloat(row[k])||0;
-        return `<td class="td-pkr" style="${n>0?'color:var(--green)':''}">${n>0?Number(n).toLocaleString():'—'}</td>`;
+        return `<td class="td-pkr" style="${n>0?'color:var(--green)':''}">${n>0?Number(n).toLocaleString():'-'}</td>`;
       }
       if (k === 'Checkout_Bfast') {
         const n = parseFloat(row[k])||0;
-        return `<td class="td-pkr" style="${n>0?'color:var(--gold)':''}">${n>0?Number(n).toLocaleString():'—'}</td>`;
+        return `<td class="td-pkr" style="${n>0?'color:var(--gold)':''}">${n>0?Number(n).toLocaleString():'-'}</td>`;
       }
       if (pkrCols.has(k)) {
         const n = parseFloat(row[k])||0;
-        return `<td class="td-pkr ${n===0?'zero':''}">${n>0?Number(n).toLocaleString():'—'}</td>`;
+        return `<td class="td-pkr ${n===0?'zero':''}">${n>0?Number(n).toLocaleString():'-'}</td>`;
       }
       return `<td>${row[k]||''}</td>`;
     }).join('') + '</tr>';
   });
 
   html += '<tr class="month-totals"><td><b>TOTAL</b></td>' + cols.slice(1).map(([k]) => {
-    if (k === 'Rooms_Occupied') return `<td style="text-align:center">—</td>`;
+    if (k === 'Rooms_Occupied') return `<td style="text-align:center">-</td>`;
     if (pkrCols.has(k)) return `<td class="td-pkr"><b>${Number(totals[k]).toLocaleString()}</b></td>`;
-    return `<td>—</td>`;
+    return `<td>-</td>`;
   }).join('') + '</tr>';
 
   html += '</tbody></table>';
@@ -2404,7 +2496,7 @@ async function submitFnbEntry() {
     pax:          0,
     contact:      '',
     guestType:    'F&B Only',
-    comments:     'F&B only entry — no room stay',
+    comments:     'F&B only entry - no room stay',
     cashRoom:     0, onlineRoom: 0, nonCashRoom: 0,
     regularFood:  regular,
     ffFoodBilled: ffBilled,
@@ -2418,7 +2510,7 @@ async function submitFnbEntry() {
   try {
     const r = await gasPost({ action: 'submitDay', date, entries: [entry], submittedBy });
     if (r.ok) {
-      result.innerHTML = `<div class="co-success">✓ F&B entry saved — PKR ${Number(total).toLocaleString()} on ${formatDisplayDate(date)}</div>`;
+      result.innerHTML = `<div class="co-success">✓ F&B entry saved - PKR ${Number(total).toLocaleString()} on ${formatDisplayDate(date)}</div>`;
       toast(`✓ F&B entry saved for ${formatDisplayDate(date)}`, 'success');
       btn.textContent = '✓ Saved';
       setTimeout(() => closeFnbModalDirect(), 2000);
@@ -2479,7 +2571,7 @@ async function loadCheckoutRoom() {
     const nn = (v) => parseFloat(v)||0;
     const fmtPKR = (v) => nn(v) > 0
       ? `<span class="co-val pkr">${Number(nn(v)).toLocaleString()}</span>`
-      : `<span class="co-val zero">—</span>`;
+      : `<span class="co-val zero">-</span>`;
 
     const existingBfast = nn(e.Checkout_Bfast);
 
@@ -2494,11 +2586,11 @@ async function loadCheckoutRoom() {
       </div>
       <div class="co-preview-item">
         <div class="co-lbl">Guest</div>
-        <div class="co-val">${e.Guest_Name || '—'}</div>
+        <div class="co-val">${e.Guest_Name || '-'}</div>
       </div>
       <div class="co-preview-item">
         <div class="co-lbl">Guest Type</div>
-        <div class="co-val">${e.Guest_Type || '—'}</div>
+        <div class="co-val">${e.Guest_Type || '-'}</div>
       </div>
       <div class="co-preview-item">
         <div class="co-lbl">Cash Room</div>
@@ -2558,7 +2650,7 @@ async function submitCheckoutBreakfast() {
     if (r.ok) {
       result.innerHTML = `
         <div class="co-success">
-          ✓ Breakfast of PKR ${Number(bfast).toLocaleString()} added to Room ${room} — ${formatDisplayDate(date)}<br>
+          ✓ Breakfast of PKR ${Number(bfast).toLocaleString()} added to Room ${room} - ${formatDisplayDate(date)}<br>
           <span style="font-weight:400;font-size:0.75rem">Total checkout breakfast on this stay: PKR ${Number(r.newTotal).toLocaleString()}</span>
         </div>`;
       toast(`✓ Breakfast PKR ${Number(bfast).toLocaleString()} saved to ${room} / ${date}`, 'success');
@@ -2571,7 +2663,7 @@ async function submitCheckoutBreakfast() {
       btn.textContent = 'Add Breakfast Charge';
     }
   } catch(err) {
-    result.innerHTML = `<div class="co-error">✗ Network error — check connection.</div>`;
+    result.innerHTML = `<div class="co-error">✗ Network error - check connection.</div>`;
     btn.disabled = false;
     btn.textContent = 'Add Breakfast Charge';
   }
@@ -2593,18 +2685,21 @@ function calcFFSaving(room) {
   ROOM_STATES[room].data.ffFoodDiscount = discount;
 }
 // ══════════════════════════════════════════════════════════
-const CONFIG_PIN = '1234';
+let cfgPin       = '';     // admin PIN, checked again on the server when saving
 let cfgUnlocked  = false;
 let cfgData      = null;   // cached config from server
 
-function unlockConfig() {
+async function unlockConfig() {
   const pin = document.getElementById('cfgPinInput').value.trim();
   const err = document.getElementById('cfgPinError');
-  if (pin !== CONFIG_PIN) {
-    err.textContent = 'Incorrect PIN. Please try again.';
+  err.textContent = 'Checking...';
+  const r = await gasPost({ action: 'unlock', pin: pin });
+  if (!r.ok) {
+    err.textContent = r.error || 'Incorrect PIN. Please try again.';
     document.getElementById('cfgPinInput').value = '';
     return;
   }
+  cfgPin = pin;
   err.textContent = '';
   cfgUnlocked = true;
   document.getElementById('cfg-pin-gate').style.display = 'none';
@@ -2614,6 +2709,7 @@ function unlockConfig() {
 
 function lockConfig() {
   cfgUnlocked = false;
+  cfgPin = '';
   document.getElementById('cfg-pin-gate').style.display = 'block';
   document.getElementById('cfg-panel').style.display    = 'none';
   document.getElementById('cfgPinInput').value = '';
@@ -2687,7 +2783,7 @@ async function saveSection(section) {
 
   const payload = {
     action:   'saveConfig',
-    pin:      CONFIG_PIN,
+    pin:      cfgPin,
     savedBy:  document.getElementById('submittedBy')?.value || 'Config Panel',
     nonCashRates: section === 'rates' ? updated : (cfgData.nonCashRates || {}),
     foodPrices:   section === 'food'  ? updated : (cfgData.foodPrices   || {}),
