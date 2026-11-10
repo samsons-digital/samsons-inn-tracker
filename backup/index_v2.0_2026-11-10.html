@@ -1,0 +1,2724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Samsons Inn – Daily Sales Tracker</title>
+<style>
+/* ── Reset & Base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy:    #1a3a5c;
+  --navy2:   #0f2540;
+  --gold:    #c8922e;
+  --gold2:   #e8b04a;
+  --cream:   #f7f4ef;
+  --white:   #ffffff;
+  --muted:   #6b7a8d;
+  --border:  #d4cfc7;
+  --green:   #2e7d52;
+  --red:     #c0392b;
+  --blue:    #2563eb;
+  --shadow:  0 2px 12px rgba(26,58,92,0.13);
+  --radius:  8px;
+}
+html { font-size: 15px; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--cream);
+  color: #1c2b3a;
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+.header {
+  background: var(--navy);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.08);
+  position: sticky; top: 0; z-index: 100;
+}
+.header-brand { display: flex; align-items: center; gap: 12px; }
+.header-brand .logo {
+  width: 34px; height: 34px; background: var(--gold);
+  border-radius: 6px; display: grid; place-items: center;
+  font-weight: 800; font-size: 14px; color: var(--navy);
+  letter-spacing: -0.5px;
+}
+.header-brand h1 { color: var(--white); font-size: 1rem; font-weight: 600; letter-spacing: 0.3px; }
+.header-brand span { color: var(--gold2); font-size: 0.78rem; }
+.header-right { display: flex; align-items: center; gap: 10px; }
+/* Sync pill */
+.sync-pill {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 20px; padding: 4px 12px 4px 8px;
+  font-size: 0.72rem; font-weight: 700; color: rgba(255,255,255,0.7);
+  transition: all 0.3s; cursor: default; white-space: nowrap;
+}
+.sync-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #6b7a8d; transition: background 0.3s;
+  flex-shrink: 0;
+}
+/* States */
+.sync-pill.syncing  { border-color: rgba(200,146,46,0.5); color: var(--gold2); }
+.sync-pill.syncing  .sync-dot { background: var(--gold); animation: syncPulse 0.8s ease-in-out infinite; }
+.sync-pill.ok       { border-color: rgba(46,125,82,0.5); color: #6fcf97; }
+.sync-pill.ok       .sync-dot { background: #27ae60; }
+.sync-pill.error    { border-color: rgba(192,57,43,0.5); color: #e57373; }
+.sync-pill.error    .sync-dot { background: var(--red); }
+@keyframes syncPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.75); }
+}
+
+.date-badge {
+  background: rgba(255,255,255,0.1); color: var(--gold2);
+  padding: 4px 12px; border-radius: 20px; font-size: 0.78rem;
+  font-weight: 600; border: 1px solid rgba(255,255,255,0.15);
+}
+
+/* ── Tab Bar (below header) ── */
+.tab-bar {
+  background: var(--navy2);
+  border-bottom: 2px solid rgba(200,146,46,0.3);
+  position: sticky; top: 56px; z-index: 99;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.nav-tabs {
+  display: flex; gap: 0;
+  max-width: 1100px; margin: 0 auto;
+  padding: 0 20px;
+}
+.nav-tab {
+  padding: 11px 22px; font-size: 0.8rem;
+  font-weight: 700; cursor: pointer;
+  color: rgba(255,255,255,0.5);
+  border: none; background: transparent;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s; letter-spacing: 0.3px;
+  text-transform: uppercase; font-size: 0.73rem;
+  margin-bottom: -2px;
+}
+.nav-tab.active {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+  background: rgba(200,146,46,0.08);
+}
+.nav-tab:hover:not(.active) {
+  color: rgba(255,255,255,0.85);
+  background: rgba(255,255,255,0.05);
+}
+
+/* ── Layout ── */
+.container { max-width: 1100px; margin: 0 auto; padding: 24px 20px 60px; }
+.page { display: none; }
+.page.active { display: block; }
+
+/* Period pills */
+.period-bar {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 18px; align-items: center;
+}
+.period-label {
+  font-size: 0.7rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.6px; margin-right: 4px;
+}
+.period-pill {
+  padding: 6px 16px; border-radius: 20px; font-size: 0.75rem;
+  font-weight: 700; cursor: pointer; border: 1.5px solid var(--border);
+  background: var(--white); color: var(--muted);
+  transition: all 0.18s; white-space: nowrap;
+}
+.period-pill:hover { border-color: var(--navy); color: var(--navy); }
+.period-pill.active {
+  background: var(--navy); color: var(--white);
+  border-color: var(--navy);
+}
+.period-pill.active.gold { background: var(--gold); color: var(--navy); border-color: var(--gold); }
+
+/* ── Dashboard ── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px; margin-bottom: 24px;
+}
+.kpi-card {
+  background: var(--white); border-radius: var(--radius);
+  padding: 18px 20px; box-shadow: var(--shadow);
+  border-left: 4px solid var(--navy);
+}
+.kpi-card.gold  { border-left-color: var(--gold); }
+.kpi-card.green { border-left-color: var(--green); }
+.kpi-card.blue  { border-left-color: var(--blue); }
+.kpi-card.red   { border-left-color: var(--red); }
+.kpi-label { font-size: 0.7rem; font-weight: 700; color: var(--muted);
+             text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+.kpi-value { font-size: 1.45rem; font-weight: 800; color: var(--navy); line-height: 1; }
+.kpi-value.pkr::before { content: 'PKR '; font-size: 0.65em; font-weight: 600; color: var(--muted); }
+.kpi-value.pct::after  { content: '%';   font-size: 0.65em; font-weight: 600; color: var(--muted); }
+.kpi-sub { font-size: 0.7rem; color: var(--muted); margin-top: 5px; }
+.kpi-trend {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 0.68rem; font-weight: 700; margin-top: 4px;
+  padding: 2px 6px; border-radius: 3px;
+}
+.kpi-trend.up   { background: #e6f4ec; color: var(--green); }
+.kpi-trend.down { background: #fdecea; color: var(--red); }
+.kpi-trend.flat { background: #f0ede8; color: var(--muted); }
+
+/* Occupancy bar */
+.occ-bar-wrap { margin-top: 8px; }
+.occ-bar-track {
+  height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;
+}
+.occ-bar-fill {
+  height: 100%; background: var(--gold); border-radius: 3px;
+  transition: width 0.6s ease;
+}
+
+.section-title {
+  font-size: 0.78rem; font-weight: 700; color: var(--navy);
+  text-transform: uppercase; letter-spacing: 0.7px;
+  margin-bottom: 14px; display: flex; align-items: center; gap: 10px;
+}
+.section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── Two-column dashboard layout ── */
+.dash-row {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 16px; margin-bottom: 20px;
+}
+.dash-row.three { grid-template-columns: 2fr 1fr 1fr; }
+.dash-card {
+  background: var(--white); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 18px 20px;
+}
+.dash-card.full { grid-column: 1 / -1; }
+
+/* 7-day bar chart */
+.bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 110px; }
+.bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.bar-stack { width: 100%; display: flex; flex-direction: column; justify-content: flex-end; }
+.bar-seg { width: 100%; transition: height 0.5s ease; min-height: 0; border-radius: 2px 2px 0 0; }
+.bar-seg.room-seg { background: var(--navy); }
+.bar-seg.food-seg { background: var(--gold); opacity: 0.75; border-radius: 0; }
+.bar.today-bar { background: var(--gold); }
+.bar-label { font-size: 0.62rem; color: var(--muted); white-space: nowrap; }
+.bar-val   { font-size: 0.62rem; color: var(--navy); font-weight: 700; }
+
+/* Monthly history chart */
+.month-bar-chart { display: flex; align-items: flex-end; gap: 4px; height: 90px; overflow: hidden; }
+.month-bar-wrap  { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.month-bar { width: 100%; background: var(--navy); border-radius: 2px 2px 0 0; min-height: 2px; transition: height 0.5s; }
+.month-bar.cur { background: var(--gold); }
+.month-bar-label { font-size: 0.56rem; color: var(--muted); white-space: nowrap; overflow: hidden; }
+
+/* Top rooms table */
+.room-rank { display: flex; flex-direction: column; gap: 8px; }
+.room-rank-row {
+  display: flex; align-items: center; gap: 10px;
+}
+.room-rank-num {
+  width: 28px; height: 28px; border-radius: 6px; background: var(--navy);
+  color: var(--white); font-size: 0.72rem; font-weight: 800;
+  display: grid; place-items: center; flex-shrink: 0;
+}
+.room-rank-num.r1 { background: var(--gold); color: var(--navy); }
+.room-rank-num.r2 { background: #a0a0a0; }
+.room-rank-num.r3 { background: #b87333; }
+.room-rank-bar-wrap { flex: 1; }
+.room-rank-label { font-size: 0.72rem; font-weight: 700; color: var(--navy); margin-bottom: 3px; }
+.room-rank-track { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.room-rank-fill  { height: 100%; background: var(--navy); border-radius: 3px; transition: width 0.6s; }
+.room-rank-val   { font-size: 0.68rem; color: var(--muted); font-weight: 600; white-space: nowrap; }
+
+/* Food vs Room donut-style split */
+.split-row { display: flex; gap: 10px; margin-top: 8px; }
+.split-item { flex: 1; text-align: center; }
+.split-pct  { font-size: 1.6rem; font-weight: 800; color: var(--navy); line-height: 1; }
+.split-lbl  { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+.split-bar-track { height: 8px; background: var(--border); border-radius: 4px; margin-top: 8px; overflow: hidden; }
+.split-bar-room  { height: 100%; background: var(--navy); border-radius: 4px; transition: width 0.6s; }
+
+/* Avg occupancy per month sparkline */
+.occ-month-row  { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid #f0ede8; }
+.occ-month-row:last-child { border-bottom: none; }
+.occ-month-name { font-size: 0.72rem; font-weight: 700; color: var(--navy); width: 52px; flex-shrink: 0; }
+.occ-month-track{ flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.occ-month-fill { height: 100%; border-radius: 4px; transition: width 0.6s; }
+.occ-month-pct  { font-size: 0.7rem; font-weight: 700; color: var(--navy); width: 36px; text-align: right; }
+
+/* Legend dot */
+.legend { display: flex; gap: 14px; margin-bottom: 10px; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.68rem; color: var(--muted); }
+.legend-dot  { width: 8px; height: 8px; border-radius: 2px; }
+
+@media (max-width: 768px) {
+  .dash-row       { grid-template-columns: 1fr; }
+  .dash-row.three { grid-template-columns: 1fr; }
+}
+
+/* ── Submit Form ── */
+.form-card {
+  background: var(--white); border-radius: var(--radius);
+  box-shadow: var(--shadow); overflow: hidden;
+}
+.form-top {
+  background: var(--navy); padding: 16px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.form-top h2 { color: var(--white); font-size: 0.95rem; font-weight: 700; }
+.form-top .date-select {
+  display: flex; align-items: center; gap: 8px;
+}
+.form-top input[type="date"] {
+  background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25);
+  color: var(--white); padding: 5px 10px; border-radius: 5px;
+  font-size: 0.82rem; font-family: inherit;
+}
+.form-top input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
+
+/* Room grid */
+.room-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 12px; padding: 16px;
+}
+.room-card {
+  border: 1.5px solid var(--border); border-radius: var(--radius);
+  overflow: hidden; transition: border-color 0.2s;
+}
+.room-card.occupied { border-color: var(--gold); }
+.room-card.staff    { border-color: #5b8fe8; }
+
+.room-header {
+  padding: 8px 12px; background: #f0eee9;
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; user-select: none;
+}
+.room-header.occupied { background: #fdf3e0; }
+.room-header.staff    { background: #e8f0fe; }
+.room-num {
+  font-weight: 800; font-size: 0.88rem; color: var(--navy);
+  background: var(--navy); color: var(--white);
+  padding: 2px 8px; border-radius: 4px;
+}
+.room-num.staff-room { background: #2563eb; }
+.room-status {
+  font-size: 0.72rem; font-weight: 700;
+  color: var(--muted); text-transform: uppercase;
+}
+.room-status.occ    { color: var(--gold); }
+.room-status.staff-s { color: #2563eb; }
+.room-toggle {
+  width: 40px; height: 22px; border-radius: 11px;
+  background: var(--border); position: relative; cursor: pointer;
+  transition: background 0.2s; flex-shrink: 0;
+  border: none; outline: none;
+}
+.room-toggle::after {
+  content: ''; position: absolute; top: 3px; left: 3px;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--white); transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.room-toggle.on { background: var(--gold); }
+.room-toggle.on::after { transform: translateX(18px); }
+.room-toggle.staff-on { background: #2563eb; }
+
+.room-body { padding: 10px 12px; display: none; }
+.room-body.visible { display: block; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.field-row.three { grid-template-columns: 1fr 1fr 1fr; }
+.field-row.full  { grid-template-columns: 1fr; }
+.field label { font-size: 0.68rem; font-weight: 700; color: var(--muted);
+               text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 3px; }
+.field input, .field select {
+  width: 100%; padding: 6px 8px; border: 1.5px solid var(--border);
+  border-radius: 5px; font-size: 0.82rem; font-family: inherit;
+  color: #1c2b3a; background: var(--white); transition: border-color 0.2s;
+}
+.field input:focus, .field select:focus {
+  outline: none; border-color: var(--navy);
+}
+.field input.money { text-align: right; font-weight: 600; }
+.money-group { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.money-label {
+  font-size: 0.7rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 2px;
+}
+.noncash-badge {
+  display: inline-block; background: #e8f0fe; color: #2563eb;
+  padding: 2px 7px; border-radius: 3px; font-size: 0.68rem; font-weight: 700;
+  margin-left: 6px; vertical-align: middle;
+}
+
+/* Floor dividers */
+.floor-divider {
+  padding: 8px 16px 4px;
+  font-size: 0.7rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 1px;
+  border-bottom: 1px solid var(--border); margin: 0 16px 0;
+}
+
+/* Submit bar */
+.submit-bar {
+  border-top: 1px solid var(--border);
+  padding: 14px 20px; background: #f7f6f3;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.submit-bar .by-field {
+  display: flex; align-items: center; gap: 8px;
+}
+.submit-bar .by-field label { font-size: 0.78rem; font-weight: 600; color: var(--muted); white-space: nowrap; }
+.submit-bar .by-field input {
+  padding: 6px 10px; border: 1.5px solid var(--border); border-radius: 5px;
+  font-size: 0.82rem; font-family: inherit; width: 160px;
+}
+.submit-bar .totals { font-size: 0.82rem; color: var(--muted); }
+.submit-bar .totals b { color: var(--navy); }
+.btn-submit {
+  padding: 10px 28px; background: var(--gold);
+  border: none; border-radius: 6px;
+  font-size: 0.88rem; font-weight: 800; color: var(--navy);
+  cursor: pointer; transition: all 0.2s; white-space: nowrap;
+}
+.btn-submit:hover  { background: var(--gold2); transform: translateY(-1px); }
+.btn-submit:active { transform: translateY(0); }
+.btn-submit:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; transform: none; }
+
+/* ── Log Table ── */
+.log-controls {
+  display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; align-items: center;
+}
+.log-controls input[type="month"], .log-controls input[type="date"] {
+  padding: 6px 10px; border: 1.5px solid var(--border); border-radius: 5px;
+  font-size: 0.82rem; font-family: inherit;
+}
+.btn-secondary {
+  padding: 7px 16px; background: var(--navy);
+  border: none; border-radius: 5px;
+  font-size: 0.78rem; font-weight: 700; color: var(--white);
+  cursor: pointer; transition: background 0.2s;
+}
+.btn-secondary:hover { background: var(--navy2); }
+.table-wrap { overflow-x: auto; }
+table {
+  width: 100%; border-collapse: collapse; font-size: 0.79rem;
+  background: var(--white); border-radius: var(--radius);
+  overflow: hidden; box-shadow: var(--shadow);
+}
+thead tr { background: var(--navy); color: var(--white); }
+th { padding: 9px 10px; font-weight: 700; text-align: left;
+     font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+td { padding: 8px 10px; border-bottom: 1px solid #f0ede8; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fafaf7; }
+.td-room { font-weight: 800; color: var(--navy); }
+.td-pkr  { text-align: right; font-weight: 600; }
+.td-pkr.zero { color: #c5bfb6; }
+.badge {
+  padding: 2px 7px; border-radius: 3px; font-size: 0.66rem; font-weight: 700;
+  text-transform: uppercase;
+}
+.badge.guest   { background: #e8f5ee; color: var(--green); }
+.badge.staff   { background: #e8f0fe; color: #2563eb; }
+.badge.ff      { background: #fef3e0; color: var(--gold); }
+.badge.other   { background: #f0ede8; color: var(--muted); }
+
+/* ── Toast ── */
+.toast-area { position: fixed; bottom: 20px; right: 20px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+.toast {
+  padding: 12px 18px; border-radius: 7px; font-size: 0.82rem;
+  font-weight: 700; color: var(--white); box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  animation: toastIn 0.3s ease; max-width: 320px;
+}
+.toast.success { background: var(--green); }
+.toast.error   { background: var(--red); }
+.toast.info    { background: var(--navy); }
+@keyframes toastIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* ── Loading ── */
+.spinner {
+  width: 30px; height: 30px; border: 3px solid var(--border);
+  border-top-color: var(--navy); border-radius: 50%;
+  animation: spin 0.7s linear infinite; margin: 30px auto;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-msg { text-align: center; color: var(--muted); font-size: 0.82rem; padding: 20px; }
+
+/* ── Monthly Summary table extras ── */
+.month-totals td { font-weight: 700; background: #f0eee9; }
+.col-date { white-space: nowrap; }
+
+/* ── Responsive ── */
+/* ── Occupancy Breakdown Panel ── */
+.occ-breakdown-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+.occ-breakdown-block {
+  background: var(--cream); border-radius: 6px; padding: 14px 16px;
+}
+.occ-breakdown-block.staff-block { background: #e8f0fe; }
+.occ-breakdown-block.impact-block { background: #fdf3e0; border: 1px solid rgba(200,146,46,0.25); }
+.occ-bd-title {
+  font-size: 0.68rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px;
+}
+.occ-bd-title.blue  { color: #2563eb; }
+.occ-bd-title.gold  { color: var(--gold); }
+.occ-bd-title.navy  { color: var(--navy); }
+.occ-bd-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.occ-bd-row:last-child { margin-bottom: 0; }
+.occ-bd-label { font-size: 0.72rem; color: var(--muted); flex: 1; }
+.occ-bd-val   { font-size: 0.88rem; font-weight: 800; color: var(--navy); white-space: nowrap; }
+.occ-bd-val.green { color: var(--green); }
+.occ-bd-val.gold  { color: var(--gold); }
+.occ-bd-val.red   { color: var(--red); }
+.occ-bd-val.blue  { color: #2563eb; }
+
+.occ-room-vis {
+  display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px;
+}
+.occ-room-dot {
+  width: 28px; height: 28px; border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.6rem; font-weight: 800;
+}
+.occ-room-dot.guest-occ   { background: var(--navy); color: var(--white); }
+.occ-room-dot.guest-empty { background: #e0ddd8; color: var(--muted); }
+.occ-room-dot.staff-perm  { background: #2563eb; color: var(--white); }
+
+@media (max-width: 768px) {
+  .occ-breakdown-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Log 7-Day View ── */
+.log-header-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; flex-wrap: wrap; gap: 10px;
+}
+
+.day-block {
+  background: var(--white); border-radius: var(--radius);
+  box-shadow: var(--shadow); margin-bottom: 12px;
+  overflow: hidden; border: 1.5px solid var(--border);
+  transition: border-color 0.2s;
+}
+.day-block.submitted   { border-left: 4px solid var(--green); }
+.day-block.not-submitted { border-left: 4px solid var(--red); }
+.day-block.today-block { border-left: 4px solid var(--gold); }
+
+/* Summary row — always visible, clickable */
+.day-summary {
+  display: grid;
+  grid-template-columns: 180px 1fr 1fr 1fr 120px 100px;
+  align-items: center; gap: 0;
+  padding: 0; cursor: pointer;
+  user-select: none;
+}
+.day-summary:hover { background: #fafaf7; }
+
+.day-col {
+  padding: 14px 16px;
+  border-right: 1px solid var(--border);
+}
+.day-col:last-child { border-right: none; }
+
+.day-date-main  { font-size: 0.88rem; font-weight: 800; color: var(--navy); }
+.day-date-sub   { font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
+.day-col-label  { font-size: 0.65rem; font-weight: 700; color: var(--muted);
+                  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.day-col-value  { font-size: 0.88rem; font-weight: 700; color: var(--navy); }
+.day-col-sub    { font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
+
+/* Occupancy pill */
+.occ-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 800;
+}
+.occ-pill.high   { background: #e6f4ec; color: var(--green); }
+.occ-pill.medium { background: #fdf3e0; color: var(--gold); }
+.occ-pill.low    { background: #fdecea; color: var(--red); }
+
+/* Submitted badge */
+.sub-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.4px;
+}
+.sub-badge.yes { background: #e6f4ec; color: var(--green); }
+.sub-badge.no  { background: #fdecea; color: var(--red); }
+
+/* Expand chevron */
+.day-chevron {
+  font-size: 0.7rem; color: var(--muted); margin-left: 4px;
+  transition: transform 0.2s;
+}
+.day-block.expanded .day-chevron { transform: rotate(180deg); }
+
+/* Expandable detail */
+.day-detail { display: none; border-top: 1px solid var(--border); }
+.day-block.expanded .day-detail { display: block; }
+
+/* Room detail table inside expanded */
+.day-detail table { font-size: 0.76rem; }
+.day-detail thead tr { background: #f0ede8; }
+.day-detail th { color: var(--navy); font-size: 0.65rem; padding: 7px 10px; }
+.day-detail td { padding: 6px 10px; }
+
+/* No-submission placeholder */
+.no-sub-msg {
+  padding: 20px 20px; color: var(--red);
+  font-size: 0.8rem; font-weight: 700;
+  display: flex; align-items: center; gap: 8px;
+}
+
+@media (max-width: 900px) {
+  .day-summary { grid-template-columns: 1fr 1fr 1fr; }
+  .day-col { border-bottom: 1px solid var(--border); border-right: none; }
+}
+@media (max-width: 560px) {
+  .day-summary { grid-template-columns: 1fr 1fr; }
+}
+
+/* ── Checkout Tab ── */
+.co-step-row {
+  display: flex; gap: 14px; align-items: flex-start;
+  flex-wrap: wrap; margin-bottom: 6px;
+}
+.co-step-row .field { flex: 1; min-width: 160px; }
+
+.co-preview-card {
+  background: var(--cream); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 16px 18px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 12px;
+}
+.co-preview-item .co-lbl {
+  font-size: 0.67rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;
+}
+.co-preview-item .co-val { font-size: 0.9rem; font-weight: 700; color: var(--navy); }
+.co-preview-item .co-val.pkr::before { content: 'PKR '; font-size: 0.7em; color: var(--muted); font-weight: 600; }
+.co-preview-item .co-val.zero { color: #c5bfb6; font-weight: 400; }
+.co-preview-item .co-val.highlight { color: var(--gold); }
+
+.co-not-found {
+  background: #fdecea; color: var(--red); border-radius: var(--radius);
+  padding: 14px 18px; font-size: 0.82rem; font-weight: 600; margin-top: 16px;
+  border-left: 4px solid var(--red);
+}
+.co-success {
+  background: #e6f4ec; color: var(--green); border-radius: var(--radius);
+  padding: 12px 16px; font-size: 0.82rem; font-weight: 700;
+  border-left: 4px solid var(--green);
+}
+.co-error {
+  background: #fdecea; color: var(--red); border-radius: var(--radius);
+  padding: 12px 16px; font-size: 0.82rem; font-weight: 700;
+  border-left: 4px solid var(--red);
+}
+
+.cfg-gate-card {
+  max-width: 380px; margin: 60px auto; background: var(--white);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: 40px 36px; text-align: center;
+}
+.cfg-gate-icon  { font-size: 2.4rem; margin-bottom: 12px; }
+.cfg-gate-title { font-size: 1.1rem; font-weight: 800; color: var(--navy); margin-bottom: 6px; }
+.cfg-gate-sub   { font-size: 0.8rem; color: var(--muted); margin-bottom: 24px; }
+.cfg-pin-row    { display: flex; gap: 10px; justify-content: center; }
+.cfg-pin-input  {
+  width: 120px; padding: 10px 14px; border: 2px solid var(--border);
+  border-radius: 6px; font-size: 1.1rem; text-align: center;
+  letter-spacing: 6px; font-family: inherit;
+  transition: border-color 0.2s;
+}
+.cfg-pin-input:focus { outline: none; border-color: var(--navy); }
+.cfg-pin-error  { color: var(--red); font-size: 0.78rem; margin-top: 10px; min-height: 18px; font-weight: 600; }
+
+.cfg-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.cfg-card {
+  background: var(--white); border-radius: var(--radius);
+  box-shadow: var(--shadow); overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.cfg-card-header { padding: 16px 20px 12px; border-bottom: 1px solid var(--border); }
+.cfg-card-title  { font-size: 0.88rem; font-weight: 800; color: var(--navy); margin-bottom: 3px; }
+.cfg-card-sub    { font-size: 0.72rem; color: var(--muted); }
+.cfg-card-footer {
+  padding: 12px 20px; background: #f7f6f3;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+}
+.cfg-save-msg { font-size: 0.75rem; font-weight: 700; }
+.cfg-save-msg.ok  { color: var(--green); }
+.cfg-save-msg.err { color: var(--red); }
+
+/* Editable rate/price rows */
+.cfg-rows { padding: 12px 20px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.cfg-row  {
+  display: flex; align-items: center;
+  gap: 10px; padding: 8px 0;
+  border-bottom: 1px solid #f0ede8;
+}
+.cfg-row:last-child { border-bottom: none; }
+.cfg-row-label { flex: 1; font-size: 0.82rem; font-weight: 600; color: var(--navy); }
+.cfg-row-input {
+  width: 110px; padding: 6px 10px; border: 1.5px solid var(--border);
+  border-radius: 5px; font-size: 0.82rem; font-family: inherit;
+  text-align: right; font-weight: 700; color: var(--navy);
+  transition: border-color 0.2s;
+}
+.cfg-row-input:focus { outline: none; border-color: var(--navy); }
+.cfg-row-unit { font-size: 0.72rem; color: var(--muted); width: 28px; }
+
+/* Guest type / room badges in config */
+.cfg-badge-wrap { padding: 14px 20px; display: flex; flex-wrap: wrap; gap: 8px; flex: 1; }
+.cfg-badge {
+  padding: 4px 10px; background: var(--cream); border: 1px solid var(--border);
+  border-radius: 4px; font-size: 0.76rem; font-weight: 600; color: var(--navy);
+}
+.cfg-badge.room { background: #e8f0fe; border-color: #b8d0f8; color: #2563eb; }
+
+@media (max-width: 768px) {
+  .cfg-grid { grid-template-columns: 1fr; }
+}
+  .header { padding: 0 12px; }
+  .nav-tab { padding: 10px 14px; font-size: 0.68rem; }
+  .container { padding: 12px 12px 60px; }
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+  .field-row { grid-template-columns: 1fr; }
+  .field-row.three { grid-template-columns: 1fr; }
+}
+
+/* ── F&B Only Button ── */
+.btn-fnb {
+  padding: 8px 18px; background: transparent;
+  border: 2px solid var(--gold); border-radius: 6px;
+  font-size: 0.82rem; font-weight: 800; color: var(--gold);
+  cursor: pointer; transition: all 0.2s; white-space: nowrap;
+}
+.btn-fnb:hover { background: var(--gold); color: var(--navy); }
+
+/* ── Modal ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(10,20,40,0.55); z-index: 500;
+  align-items: center; justify-content: center;
+  backdrop-filter: blur(2px);
+}
+.modal-overlay.open { display: flex; }
+.modal-card {
+  background: var(--white); border-radius: 10px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+  width: 90%; max-width: 620px;
+  max-height: 90vh; overflow-y: auto;
+  animation: modalIn 0.22s ease;
+}
+@keyframes modalIn {
+  from { transform: translateY(20px) scale(0.97); opacity: 0; }
+  to   { transform: translateY(0)    scale(1);    opacity: 1; }
+}
+.modal-header {
+  background: var(--navy); padding: 16px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-radius: 10px 10px 0 0;
+}
+.modal-title { color: var(--white); font-size: 0.95rem; font-weight: 800; }
+.modal-sub   { color: rgba(255,255,255,0.6); font-size: 0.72rem; margin-top: 2px; }
+.modal-close {
+  background: rgba(255,255,255,0.12); border: none; color: var(--white);
+  width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+  font-size: 0.78rem; display: grid; place-items: center;
+  transition: background 0.2s;
+}
+.modal-close:hover { background: rgba(255,255,255,0.25); }
+.modal-body   { padding: 20px; }
+.modal-footer {
+  padding: 14px 20px; background: #f7f6f3;
+  border-top: 1px solid var(--border);
+  display: flex; justify-content: flex-end; gap: 10px;
+  border-radius: 0 0 10px 10px;
+}
+
+/* ── Same-Day Stay ── */
+.same-day-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0 6px; margin-top: 6px;
+  border-top: 1px dashed var(--border); gap: 10px;
+}
+.same-day-label {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.78rem; font-weight: 700; color: var(--navy);
+}
+.same-day-icon { font-size: 0.9rem; }
+.same-day-hint {
+  font-size: 0.67rem; color: var(--muted); font-weight: 400;
+}
+.same-day-fields {
+  background: #fff8ec; border-radius: 6px;
+  padding: 10px 10px 4px; margin-bottom: 8px;
+  border: 1px solid rgba(200,146,46,0.25);
+}
+.same-day-badge {
+  display: inline-block; background: var(--gold); color: var(--navy);
+  padding: 1px 7px; border-radius: 3px; font-size: 0.66rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.4px; vertical-align: middle;
+  margin-left: 6px;
+}
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header class="header">
+  <div class="header-brand">
+    <div class="logo">SI</div>
+    <div>
+      <h1>Samsons Inn</h1>
+      <span>Daily Sales Tracker</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="date-badge" id="headerDate"></div>
+    <div class="sync-pill" id="syncPill" title="Last sync status">
+      <span class="sync-dot" id="syncDot"></span>
+      <span class="sync-label" id="syncLabel">Ready</span>
+    </div>
+  </div>
+</header>
+
+<!-- ── Tab Bar ── -->
+<nav class="tab-bar">
+  <div class="nav-tabs">
+    <button class="nav-tab active" data-page="dashboard">Dashboard</button>
+    <button class="nav-tab" data-page="submit">Submit</button>
+    <button class="nav-tab" data-page="checkout">Checkout</button>
+    <button class="nav-tab" data-page="log">Log</button>
+    <button class="nav-tab" data-page="summary">Monthly</button>
+    <button class="nav-tab" data-page="config">Config</button>
+  </div>
+</nav>
+
+<!-- ── Pages ── -->
+<div class="container">
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+
+    <!-- Period Pill Bar -->
+    <div class="period-bar" id="periodBar">
+      <span class="period-label">View:</span>
+      <button class="period-pill gold active" data-period="today"       onclick="setPeriod('today')">Today</button>
+      <button class="period-pill"             data-period="yesterday"   onclick="setPeriod('yesterday')">Yesterday</button>
+      <button class="period-pill"             data-period="last7"       onclick="setPeriod('last7')">Last 7 Days</button>
+      <button class="period-pill"             data-period="lastweekend" onclick="setPeriod('lastweekend')">Last Weekend</button>
+      <button class="period-pill"             data-period="thismonth"   onclick="setPeriod('thismonth')">This Month</button>
+      <button class="period-pill"             data-period="lastmonth"   onclick="setPeriod('lastmonth')">Last Month</button>
+    </div>
+
+    <!-- Today label -->
+    <div class="section-title">
+      <span id="periodHeading">Today</span> —
+      <span id="dashTodayDate" style="font-weight:400;text-transform:none;letter-spacing:0"></span>
+    </div>
+    <div class="kpi-grid" id="kpiGrid">
+      <div class="loading-msg"><div class="spinner"></div>Loading dashboard…</div>
+    </div>
+
+    <!-- Row 2: 7-day chart + MTD panel -->
+    <div class="dash-row" style="margin-bottom:20px">
+      <div class="dash-card">
+        <div class="section-title">Revenue — Last 7 Days</div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--navy)"></div>Room</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--gold);opacity:0.75"></div>Food</div>
+        </div>
+        <div class="bar-chart" id="barChart7">
+          <div class="loading-msg" style="width:100%">Loading…</div>
+        </div>
+      </div>
+      <div class="dash-card">
+        <div class="section-title">Month to Date</div>
+        <div id="mtdPanel"><div class="loading-msg">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- Row 3: Monthly history chart (full width) -->
+    <div class="dash-card" style="margin-bottom:20px">
+      <div class="section-title">Monthly Revenue — All Time</div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--navy)"></div>Revenue (cash + online)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--gold)"></div>Current month</div>
+      </div>
+      <div class="month-bar-chart" id="monthHistoryChart">
+        <div class="loading-msg" style="width:100%">Loading…</div>
+      </div>
+    </div>
+
+    <!-- Row 3b: Room Occupancy Breakdown (full width) -->
+    <div class="dash-card" style="margin-bottom:20px" id="occBreakdownCard">
+      <div class="section-title">Room Occupancy Breakdown
+        <span id="occPeriodLabel" style="font-size:0.72rem;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0;margin-left:4px"></span>
+      </div>
+      <div id="occBreakdown"><div class="loading-msg">Loading…</div></div>
+    </div>
+
+    <!-- Row 4: Avg occupancy + Top rooms + Food split -->
+    <div class="dash-row three">
+      <div class="dash-card">
+        <div class="section-title">Avg Occupancy by Month</div>
+        <div id="occByMonth"><div class="loading-msg">Loading…</div></div>
+      </div>
+      <div class="dash-card">
+        <div class="section-title">Top Rooms — All Time</div>
+        <div class="room-rank" id="topRooms"><div class="loading-msg">Loading…</div></div>
+      </div>
+      <div class="dash-card">
+        <div class="section-title">Revenue Split (MTD)</div>
+        <div id="revSplit"><div class="loading-msg">Loading…</div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SUBMIT -->
+  <div class="page" id="page-submit">
+    <div class="form-card">
+      <div class="form-top">
+        <h2>Room Revenue Entry</h2>
+        <div class="date-select">
+          <input type="date" id="submitDate">
+        </div>
+      </div>
+      <div id="roomGrid" class="room-grid">
+        <div class="loading-msg"><div class="spinner"></div>Loading rooms…</div>
+      </div>
+      <div class="submit-bar">
+        <div class="by-field">
+          <label>Submitted by</label>
+          <input type="text" id="submittedBy" placeholder="Your name" value="">
+        </div>
+        <div class="totals" id="liveTotals">—</div>
+        <button class="btn-fnb" onclick="openFnbModal()">+ F&B Only</button>
+        <button class="btn-submit" id="btnSubmit" onclick="submitDay()">Submit Day</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- F&B ONLY MODAL -->
+  <div class="modal-overlay" id="fnbModal" onclick="closeFnbModal(event)">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">F&amp;B Only Entry</div>
+          <div class="modal-sub">No room stay — food &amp; beverage sales only</div>
+        </div>
+        <button class="modal-close" onclick="closeFnbModalDirect()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="field-row">
+          <div class="field">
+            <label>Date</label>
+            <input type="date" id="fnbDate">
+          </div>
+          <div class="field">
+            <label>Description / Party Name</label>
+            <input type="text" id="fnbDesc" placeholder="e.g. Walk-in lunch, Staff meal, Event">
+          </div>
+        </div>
+        <div class="field-row three" style="margin-top:8px">
+          <div class="field">
+            <label>Regular Food (PKR)</label>
+            <input type="number" class="money" id="fnbRegular" value="0" min="0" step="100">
+          </div>
+          <div class="field">
+            <label>Company Food (PKR)</label>
+            <input type="number" class="money" id="fnbCompany" value="0" min="0" step="100">
+          </div>
+          <div class="field">
+            <label>Restaurant Walk-in (PKR)</label>
+            <input type="number" class="money" id="fnbResto" value="0" min="0" step="100">
+          </div>
+        </div>
+        <div style="background:#f0f4ff;border-radius:6px;padding:10px 12px;margin-top:8px">
+          <div class="money-label" style="color:#2563eb;margin-bottom:6px">F&amp;F Discounted Food</div>
+          <div class="field-row three">
+            <div class="field">
+              <label>Billed (PKR)</label>
+              <input type="number" class="money" id="fnbFFBilled" value="0" min="0" step="50"
+                     oninput="calcFnbFFSaving()">
+            </div>
+            <div class="field">
+              <label>Discount %</label>
+              <input type="number" class="money" id="fnbFFDiscount" value="0" min="0" max="100" step="5"
+                     oninput="calcFnbFFSaving()">
+            </div>
+            <div class="field">
+              <label>Saving (auto)</label>
+              <input type="number" class="money" id="fnbFFSaving" value="0" readonly
+                     style="background:#e8f0fe;color:#2563eb;cursor:default">
+            </div>
+          </div>
+        </div>
+        <div id="fnbResult" style="margin-top:10px"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeFnbModalDirect()">Cancel</button>
+        <button class="btn-submit" id="fnbSubmitBtn" onclick="submitFnbEntry()">Save F&amp;B Entry</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHECKOUT -->
+  <div class="page" id="page-checkout">
+    <div class="form-card">
+      <div class="form-top">
+        <div>
+          <h2>Checkout Breakfast</h2>
+          <div style="font-size:0.72rem;color:rgba(255,255,255,0.6);margin-top:3px">
+            Add breakfast charged on checkout morning to the previous night's record
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:20px">
+        <!-- Step 1 — select date + room -->
+        <div class="section-title">Step 1 — Select the Stay Date & Room</div>
+        <div class="co-step-row">
+          <div class="field">
+            <label>Stay Date (the night before checkout)</label>
+            <input type="date" id="coDate" oninput="coReset()">
+          </div>
+          <div class="field">
+            <label>Room Number</label>
+            <select id="coRoom" onchange="coReset()">
+              <option value="">— Select room —</option>
+              <option value="101">101</option><option value="102">102</option>
+              <option value="103">103</option><option value="104">104</option>
+              <option value="105">105</option><option value="106">106</option>
+              <option value="107">107</option><option value="201">201</option>
+              <option value="202">202</option><option value="203">203</option>
+              <option value="204">204</option><option value="205">205</option>
+              <option value="206">206</option><option value="207">207</option>
+              <option value="B1">B1</option><option value="B2">B2</option>
+            </select>
+          </div>
+          <div class="field" style="align-self:flex-end">
+            <button class="btn-secondary" onclick="loadCheckoutRoom()" style="width:100%">Load Record</button>
+          </div>
+        </div>
+
+        <!-- Step 2 — preview existing record -->
+        <div id="coPreview" style="display:none">
+          <div class="section-title" style="margin-top:20px">Step 2 — Existing Record Preview</div>
+          <div class="co-preview-card" id="coPreviewCard"></div>
+
+          <!-- Step 3 — add breakfast -->
+          <div class="section-title" style="margin-top:20px">Step 3 — Add Checkout Breakfast</div>
+          <div class="co-step-row" style="align-items:flex-end">
+            <div class="field">
+              <label>Breakfast Amount (PKR)</label>
+              <input type="number" class="money" id="coBfastAmount" min="0" step="50" placeholder="e.g. 500">
+            </div>
+            <div class="field">
+              <label>Submitted by</label>
+              <input type="text" id="coSubmittedBy" placeholder="Your name">
+            </div>
+            <div class="field" style="align-self:flex-end">
+              <button class="btn-submit" onclick="submitCheckoutBreakfast()" id="coBtnSubmit">Add Breakfast Charge</button>
+            </div>
+          </div>
+          <div id="coResult" style="margin-top:12px"></div>
+        </div>
+
+        <!-- No record found -->
+        <div id="coNotFound" style="display:none" class="co-not-found">
+          ⚠ No record found for that date and room. The night's data must be submitted via the Submit tab before a checkout breakfast can be added.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div class="page" id="page-log">
+    <div class="log-header-bar">
+      <div>
+        <div style="font-size:0.88rem;font-weight:800;color:var(--navy)">Last 7 Days — Submission Monitor</div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:2px">Newest first · Auto-loads on tab open · Click any day to expand room detail</div>
+      </div>
+      <button class="btn-secondary" onclick="loadLast7Log()" id="logRefreshBtn">↻ Refresh</button>
+    </div>
+    <div id="log7Container">
+      <div class="loading-msg"><div class="spinner"></div>Loading last 7 days…</div>
+    </div>
+  </div>
+
+  <!-- MONTHLY SUMMARY -->
+  <div class="page" id="page-summary">
+    <div class="log-controls">
+      <input type="month" id="summaryMonth">
+      <button class="btn-secondary" onclick="loadMonthlySummary()">Load</button>
+    </div>
+    <div class="table-wrap">
+      <div id="summaryTable" class="loading-msg">Select a month above.</div>
+    </div>
+  </div>
+
+  <!-- CONFIG -->
+  <div class="page" id="page-config">
+
+    <!-- PIN Gate -->
+    <div id="cfg-pin-gate">
+      <div class="cfg-gate-card">
+        <div class="cfg-gate-icon">⚙</div>
+        <div class="cfg-gate-title">Configuration Panel</div>
+        <div class="cfg-gate-sub">Enter the admin PIN to access settings</div>
+        <div class="cfg-pin-row">
+          <input type="password" id="cfgPinInput" class="cfg-pin-input"
+                 maxlength="6" placeholder="• • • •"
+                 onkeydown="if(event.key==='Enter') unlockConfig()">
+          <button class="btn-submit" onclick="unlockConfig()">Unlock</button>
+        </div>
+        <div id="cfgPinError" class="cfg-pin-error"></div>
+      </div>
+    </div>
+
+    <!-- Config Panel (hidden until PIN unlocked) -->
+    <div id="cfg-panel" style="display:none">
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <div>
+          <div class="section-title" style="margin-bottom:2px">Configuration Panel</div>
+          <div style="font-size:0.75rem;color:var(--muted)">Changes save immediately to Google Sheets</div>
+        </div>
+        <button class="btn-secondary" onclick="lockConfig()" style="background:var(--muted)">Lock</button>
+      </div>
+
+      <div class="cfg-grid">
+
+        <!-- Non-Cash Room Rates -->
+        <div class="cfg-card">
+          <div class="cfg-card-header">
+            <div class="cfg-card-title">Non-Cash Room Rates</div>
+            <div class="cfg-card-sub">Internal rates charged to company accounts (PKR / night)</div>
+          </div>
+          <div id="cfgRatesBody"><div class="loading-msg"><div class="spinner"></div></div></div>
+          <div class="cfg-card-footer">
+            <button class="btn-submit" onclick="saveSection('rates')">Save Rates</button>
+            <span class="cfg-save-msg" id="ratesSaveMsg"></span>
+          </div>
+        </div>
+
+        <!-- Food Prices -->
+        <div class="cfg-card">
+          <div class="cfg-card-header">
+            <div class="cfg-card-title">Food Price Reference</div>
+            <div class="cfg-card-sub">Standard menu prices (PKR) — used as reference when entering food revenue</div>
+          </div>
+          <div id="cfgFoodBody"><div class="loading-msg"><div class="spinner"></div></div></div>
+          <div class="cfg-card-footer">
+            <button class="btn-submit" onclick="saveSection('food')">Save Prices</button>
+            <span class="cfg-save-msg" id="foodSaveMsg"></span>
+          </div>
+        </div>
+
+        <!-- Guest Types (read-only display) -->
+        <div class="cfg-card">
+          <div class="cfg-card-header">
+            <div class="cfg-card-title">Guest Types</div>
+            <div class="cfg-card-sub">Dropdown values used in the Submit form. Edit directly in Google Sheets Config tab to add/remove.</div>
+          </div>
+          <div id="cfgTypesBody"><div class="loading-msg"><div class="spinner"></div></div></div>
+          <div class="cfg-card-footer" style="color:var(--muted);font-size:0.75rem">
+            Read-only — edit in Google Sheets → Config tab → GUEST_TYPES section
+          </div>
+        </div>
+
+        <!-- Rooms (read-only display) -->
+        <div class="cfg-card">
+          <div class="cfg-card-header">
+            <div class="cfg-card-title">Rooms</div>
+            <div class="cfg-card-sub">17 rooms tracked. Edit in Google Sheets Config tab to add/remove rooms.</div>
+          </div>
+          <div id="cfgRoomsBody"><div class="loading-msg"><div class="spinner"></div></div></div>
+          <div class="cfg-card-footer" style="color:var(--muted);font-size:0.75rem">
+            Read-only — edit in Google Sheets → Config tab → ROOMS section
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+<div class="toast-area" id="toastArea"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+//  CONFIG  – Replace SCRIPT_URL after deploying GAS
+// ══════════════════════════════════════════════════════════
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw8dVmQ0XHWhyodgHYziGa9kPZWM8aOanynrHZQBMLznWIWCS3LaeTH6RJWxTVA8CP-/exec';
+const PIN_HASH   = '1234';   // simple numeric PIN; replace with SHA for production
+
+// ══════════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════════
+let CONFIG = { rooms: [], guestTypes: [], nonCashRates: {} };
+let ROOM_STATES = {};   // roomNum → { occupied, data }
+let DASHBOARD_DATA = null;
+
+// ══════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  setDateFields();
+  setupNavTabs();
+  loadConfig();
+  loadDashboard();
+  document.getElementById('submitDate').addEventListener('change', () => buildRoomGrid());
+});
+
+function setDateFields() {
+  const today = todayISO();
+  document.getElementById('headerDate').textContent = formatDisplayDate(today);
+  document.getElementById('submitDate').value = today;
+  const mo = today.substring(0, 7);
+  document.getElementById('summaryMonth').value = mo;
+}
+
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function pad(n) { return String(n).padStart(2,'0'); }
+function formatDisplayDate(iso) {
+  const [y,m,d] = iso.split('-');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${parseInt(d)} ${months[parseInt(m)-1]} ${y}`;
+}
+function pkr(n) { return 'PKR ' + Number(n||0).toLocaleString(); }
+
+// ══════════════════════════════════════════════════════════
+//  NAV TABS
+// ══════════════════════════════════════════════════════════
+function setupNavTabs() {
+  document.querySelectorAll('.nav-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('page-' + btn.dataset.page).classList.add('active');
+      if (btn.dataset.page === 'dashboard') loadDashboard();
+      if (btn.dataset.page === 'log') loadLast7Log();
+      if (btn.dataset.page === 'config' && !cfgUnlocked) {
+        document.getElementById('cfg-pin-gate').style.display = 'block';
+        document.getElementById('cfg-panel').style.display    = 'none';
+        document.getElementById('cfgPinInput').value = '';
+        document.getElementById('cfgPinError').textContent = '';
+      }
+    });
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+//  SYNC PILL
+// ══════════════════════════════════════════════════════════
+let syncTimer = null;
+
+function syncState(state, label) {
+  const pill  = document.getElementById('syncPill');
+  const lbl   = document.getElementById('syncLabel');
+  if (!pill || !lbl) return;
+  pill.className = 'sync-pill ' + state;
+  lbl.textContent = label;
+  // Auto-revert ok/error back to idle after 4 seconds
+  if (state === 'ok' || state === 'error') {
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(() => {
+      pill.className = 'sync-pill';
+      lbl.textContent = 'Ready';
+    }, 4000);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  GAS FETCH
+// ══════════════════════════════════════════════════════════
+async function gasPost(payload) {
+  syncState('syncing', 'Syncing…');
+  try {
+    const res  = await fetch(SCRIPT_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body:    JSON.stringify(payload),
+      redirect: 'follow',
+    });
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); }
+    catch(e) { data = { ok: false, error: 'Bad response: ' + text.substring(0, 120) }; }
+
+    if (data.ok) {
+      const action = payload.action || '';
+      const label  =
+        action === 'submitDay'              ? 'Saved ✓' :
+        action === 'appendCheckoutBreakfast'? 'Bfast Saved ✓' :
+        action === 'saveConfig'             ? 'Config Saved ✓' :
+        action === 'voidEntry'              ? 'Voided ✓' :
+        action === 'getDashboard'           ? 'Dashboard ✓' :
+        action === 'getLast7DaysLog'        ? 'Log Loaded ✓' :
+        action === 'getMonthlySummary'      ? 'Month Loaded ✓' :
+        'Synced ✓';
+      syncState('ok', label);
+    } else {
+      syncState('error', 'Error ✗');
+    }
+    return data;
+  } catch(err) {
+    syncState('error', 'No Connection ✗');
+    return { ok: false, error: err.message };
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════════════════════════
+async function loadConfig() {
+  try {
+    const r = await gasPost({ action: 'getConfig' });
+    if (r.ok) { CONFIG = r; buildRoomGrid(); }
+    else toast('Config load failed: ' + r.error, 'error');
+  } catch(e) { toast('Network error loading config', 'error'); }
+}
+
+// ══════════════════════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════════════════════
+async function loadDashboard() {
+  const kpi = document.getElementById('kpiGrid');
+  kpi.innerHTML = '<div class="loading-msg"><div class="spinner"></div>Loading dashboard…</div>';
+  try {
+    const r = await gasPost({ action: 'getDashboard' });
+    if (!r.ok) { kpi.innerHTML = '<p style="color:red">Error: ' + r.error + '</p>'; return; }
+    renderDashboard(r);
+  } catch(e) {
+    kpi.innerHTML = '<p style="color:var(--red)">Could not connect to server.</p>';
+  }
+}
+
+// ── Period state ────────────────────────────────────────────────
+let DASH_DATA    = null;   // raw response from getDashboard
+let ACTIVE_PERIOD = 'today';
+
+function setPeriod(period) {
+  ACTIVE_PERIOD = period;
+  document.querySelectorAll('.period-pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.period === period);
+    p.classList.toggle('gold',   p.dataset.period === period && period === 'today');
+  });
+  if (DASH_DATA) renderDashboard(DASH_DATA);
+}
+
+// Returns { dateFrom, dateTo, label, dateRange[] } for a period key
+function computePeriod(period, today) {
+  const d = (iso) => new Date(iso + 'T00:00:00');
+  const iso = (dt) => `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}`;
+
+  const todayDt = d(today);
+
+  const addDays = (dt, n) => {
+    const x = new Date(dt); x.setDate(x.getDate() + n); return x;
+  };
+  const range = (from, to) => {
+    const dates = []; let cur = new Date(from);
+    while (cur <= to) { dates.push(iso(cur)); cur = addDays(cur, 1); }
+    return dates;
+  };
+
+  switch (period) {
+    case 'today':
+      return { label: 'Today', dateStr: formatDisplayDate(today), dates: [today] };
+
+    case 'yesterday': {
+      const yd = iso(addDays(todayDt, -1));
+      return { label: 'Yesterday', dateStr: formatDisplayDate(yd), dates: [yd] };
+    }
+
+    case 'last7': {
+      const from = iso(addDays(todayDt, -6));
+      return { label: 'Last 7 Days', dateStr: `${formatDisplayDate(from)} – ${formatDisplayDate(today)}`, dates: range(d(from), todayDt) };
+    }
+
+    case 'lastweekend': {
+      // Most recent Sat + Sun (look back up to 7 days)
+      const dow = todayDt.getDay(); // 0=Sun, 6=Sat
+      const lastSun = iso(addDays(todayDt, -(dow === 0 ? 7 : dow)));
+      const lastSat = iso(addDays(d(lastSun), -1));
+      return { label: 'Last Weekend', dateStr: `${formatDisplayDate(lastSat)} – ${formatDisplayDate(lastSun)}`, dates: [lastSat, lastSun] };
+    }
+
+    case 'thismonth': {
+      const mo = today.substring(0, 7);
+      const from = mo + '-01';
+      return { label: 'This Month', dateStr: today.substring(0, 7), dates: range(d(from), todayDt) };
+    }
+
+    case 'lastmonth': {
+      const lm = new Date(todayDt.getFullYear(), todayDt.getMonth() - 1, 1);
+      const lmEnd = new Date(todayDt.getFullYear(), todayDt.getMonth(), 0);
+      const from = iso(lm); const to = iso(lmEnd);
+      return { label: 'Last Month', dateStr: iso(lm).substring(0, 7), dates: range(lm, lmEnd) };
+    }
+
+    default:
+      return { label: 'Today', dateStr: formatDisplayDate(today), dates: [today] };
+  }
+}
+
+// Aggregate dailySummary rows for a set of dates
+function aggregatePeriod(dailySummary, dates) {
+  const dateSet    = new Set(dates);
+  const GUEST_ROOMS = 13;
+  const STAFF_ROOMS = 4;
+  let cashRoom=0, onlineRoom=0, nonCash=0, food=0, compFood=0;
+  let guestRoomDays=0, staffRoomDays=0, daysWithData=0;
+
+  dailySummary.forEach(d => {
+    if (!dateSet.has(d.date)) return;
+    cashRoom      += d.cashRoom      || 0;
+    onlineRoom    += d.onlineRoom    || 0;
+    nonCash       += d.nonCash       || 0;
+    food          += d.food          || 0;
+    compFood      += d.compFood      || 0;
+    guestRoomDays += d.guestOccupied || d.occupied || 0;
+    staffRoomDays += d.staffOccupied || 0;
+    if ((d.cashRoom||0)+(d.onlineRoom||0)+(d.food||0)+(d.nonCash||0) > 0) daysWithData++;
+  });
+
+  const total        = cashRoom + onlineRoom + food;
+  const periodDays   = Math.max(dates.length, 1);
+  const guestOccPct  = Math.round((guestRoomDays / (periodDays * GUEST_ROOMS)) * 100);
+  const staffOccPct  = Math.round((staffRoomDays / (periodDays * STAFF_ROOMS))  * 100);
+  const revpar       = Math.round(total / (periodDays * GUEST_ROOMS));
+  const foodPct      = total > 0 ? Math.round((food / total) * 100) : 0;
+  const avgGuestRate = guestRoomDays > 0
+    ? Math.round((cashRoom + onlineRoom) / guestRoomDays) : 0;
+  const opportunityCost = staffRoomDays * avgGuestRate;
+
+  return {
+    cashRoom, onlineRoom, nonCash, food, compFood, total,
+    guestRoomDays, staffRoomDays, guestOccPct, staffOccPct,
+    revpar, foodPct, daysRecorded: daysWithData,
+    avgGuestRate, opportunityCost,
+    avgOcc: guestOccPct,  // backwards compat
+  };
+}
+
+function renderDashboard(d) {
+  DASH_DATA = d;
+
+  const today  = d.today || todayISO();
+  const period = computePeriod(ACTIVE_PERIOD, today);
+  const agg    = aggregatePeriod(d.dailySummary || [], period.dates);
+
+  const hist   = d.monthlyHistory || [];
+  const tops   = d.topRooms       || [];
+  const all    = d.allTime        || {};
+
+  // ── Period heading ──
+  document.getElementById('periodHeading').textContent = period.label;
+  document.getElementById('dashTodayDate').textContent = period.dateStr;
+
+  // ── KPI cards (period-driven) ──
+  const occPct = Math.round(((agg.avgOcc || 0)));
+  const roomPct = 100 - (agg.foodPct || 0);
+
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi-card gold">
+      <div class="kpi-label">${period.label} — Cash Revenue</div>
+      <div class="kpi-value pkr">${Number(agg.cashRoom).toLocaleString()}</div>
+      <div class="kpi-sub">Room + Food combined</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">${period.label} — Online Revenue</div>
+      <div class="kpi-value pkr">${Number(agg.onlineRoom).toLocaleString()}</div>
+      <div class="kpi-sub">Bank transfer / online payments</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">${period.label} — Total Guest Revenue</div>
+      <div class="kpi-value pkr">${Number(agg.total).toLocaleString()}</div>
+      <div class="kpi-sub">Non-cash internal: ${pkr(agg.nonCash)}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Guest Occupancy (13 rooms)</div>
+      <div class="kpi-value">${agg.guestOccPct}<span style="font-size:0.65em;color:var(--muted)">%</span></div>
+      <div class="occ-bar-wrap">
+        <div class="occ-bar-track"><div class="occ-bar-fill" style="width:${Math.min(agg.guestOccPct,100)}%"></div></div>
+      </div>
+      <div class="kpi-sub">${agg.guestRoomDays} guest room nights · Staff: ${agg.staffOccPct}%</div>
+    </div>
+    <div class="kpi-card gold">
+      <div class="kpi-label">RevPAR</div>
+      <div class="kpi-value pkr">${Number(agg.revpar).toLocaleString()}</div>
+      <div class="kpi-sub">Revenue per available room/night</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">All-Time Revenue</div>
+      <div class="kpi-value pkr">${Number((all.totalRevenue||0)/1000000).toFixed(1)}M</div>
+      <div class="kpi-sub">Room ${((all.roomRevenue||0)/1000).toFixed(0)}k · Food ${((all.foodRevenue||0)/1000).toFixed(0)}k</div>
+    </div>
+  `;
+
+  // ── 7-day stacked bar chart ──
+  const bars = document.getElementById('barChart7');
+  const last7 = d.last7 || [];
+  if (!last7.length) { bars.innerHTML = '<div class="loading-msg">No data</div>'; }
+  else {
+    const maxVal = Math.max(...last7.map(x => (x.cashRoom||0)+(x.onlineRoom||0)+(x.food||0)), 1);
+    bars.innerHTML = last7.map(day => {
+      const roomTotal = (day.cashRoom||0) + (day.onlineRoom||0);
+      const foodTotal = day.food || 0;
+      const total     = roomTotal + foodTotal;
+      const totalH    = Math.max(Math.round((total / maxVal) * 90), total > 0 ? 3 : 0);
+      const roomH     = total > 0 ? Math.round((roomTotal / total) * totalH) : 0;
+      const foodH     = totalH - roomH;
+      const isToday   = day.date === today;
+      const label     = day.date ? day.date.substring(5) : '';
+      return `
+        <div class="bar-wrap">
+          <div class="bar-val">${total > 0 ? (total/1000).toFixed(0)+'k' : ''}</div>
+          <div class="bar-stack" style="height:${totalH}px">
+            <div class="bar-seg food-seg" style="height:${foodH}px"></div>
+            <div class="bar-seg room-seg ${isToday?'today-bar':''}" style="height:${roomH}px"></div>
+          </div>
+          <div class="bar-label" style="${isToday?'color:var(--gold);font-weight:700':''}">${label}</div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── MTD Panel (always shows this month regardless of pill) ──
+  const mtd = d.mtd || {};
+  document.getElementById('mtdPanel').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div>
+        <div class="kpi-label">This Month — Total Revenue</div>
+        <div class="kpi-value pkr" style="font-size:1.3rem">${Number(mtd.total||0).toLocaleString()}</div>
+        <div class="kpi-sub">${mtd.daysRecorded||0} days recorded</div>
+      </div>
+      <div>
+        <div class="kpi-label" style="margin-bottom:4px">Avg Occupancy</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="flex:1">
+            <div class="occ-bar-track"><div class="occ-bar-fill" style="width:${mtd.avgOccupancy||0}%"></div></div>
+          </div>
+          <span style="font-size:0.88rem;font-weight:800;color:var(--navy)">${mtd.avgOccupancy||0}%</span>
+        </div>
+      </div>
+      <div>
+        <div class="kpi-label">RevPAR</div>
+        <div class="kpi-value pkr" style="font-size:1.1rem">${Number(mtd.revpar||0).toLocaleString()}</div>
+        <div class="kpi-sub">Revenue per available room/night</div>
+      </div>
+      <div>
+        <div class="kpi-label">Room vs Food Mix</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-top:2px">
+          Room ${100-(mtd.foodPct||0)}% · Food ${mtd.foodPct||0}%
+        </div>
+        <div class="split-bar-track" style="margin-top:4px">
+          <div class="split-bar-room" style="width:${100-(mtd.foodPct||0)}%"></div>
+        </div>
+      </div>
+    </div>`;
+
+  // ── Monthly history chart ──
+  const mChart = document.getElementById('monthHistoryChart');
+  if (!hist.length) { mChart.innerHTML = '<div class="loading-msg">No history</div>'; }
+  else {
+    const curMonth = today.substring(0, 7);
+    const maxRev   = Math.max(...hist.map(m => m.totalRevenue || 0), 1);
+    mChart.innerHTML = hist.map(m => {
+      const h    = Math.max(Math.round(((m.totalRevenue||0) / maxRev) * 80), m.totalRevenue > 0 ? 2 : 0);
+      const isCur = m.month === curMonth;
+      const shortMo = m.month ? m.month.substring(2).replace('-', '/') : '';
+      return `
+        <div class="month-bar-wrap">
+          <div class="month-bar ${isCur?'cur':''}" style="height:${h}px"
+               title="${m.month}: PKR ${Number(m.totalRevenue||0).toLocaleString()}"></div>
+          <div class="month-bar-label" style="${isCur?'color:var(--gold);font-weight:700':''}">${shortMo}</div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Avg occupancy by month ──
+  const occEl = document.getElementById('occByMonth');
+  if (!hist.length) { occEl.innerHTML = '<div class="loading-msg">No data</div>'; }
+  else {
+    const MN = {'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun',
+                '07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'};
+    occEl.innerHTML = hist.slice(-8).map(m => {
+      const pct  = m.avgOccupancy || 0;
+      const mo   = m.month ? m.month.substring(5) : '';
+      const name = (MN[mo]||mo) + ' ' + (m.month||'').substring(2,4);
+      const col  = pct >= 70 ? 'var(--green)' : pct >= 40 ? 'var(--gold)' : 'var(--red)';
+      return `
+        <div class="occ-month-row">
+          <div class="occ-month-name">${name}</div>
+          <div class="occ-month-track">
+            <div class="occ-month-fill" style="width:${pct}%;background:${col}"></div>
+          </div>
+          <div class="occ-month-pct">${pct}%</div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Top rooms ──
+  const topEl = document.getElementById('topRooms');
+  if (!tops.length) { topEl.innerHTML = '<div class="loading-msg">No data</div>'; }
+  else {
+    const maxRev = tops[0].revenue || 1;
+    topEl.innerHTML = tops.map((r, i) => `
+      <div class="room-rank-row">
+        <div class="room-rank-num r${i+1}">${r.room}</div>
+        <div class="room-rank-bar-wrap">
+          <div class="room-rank-label">Room ${r.room}</div>
+          <div class="room-rank-track">
+            <div class="room-rank-fill" style="width:${Math.round((r.revenue/maxRev)*100)}%"></div>
+          </div>
+        </div>
+        <div class="room-rank-val">${(r.revenue/1000).toFixed(0)}k</div>
+      </div>`).join('');
+  }
+
+  // ── Revenue split ──
+  const splitEl = document.getElementById('revSplit');
+  const foodPct2 = agg.foodPct || 0;
+  const roomPct2 = 100 - foodPct2;
+  splitEl.innerHTML = `
+    <div class="split-row">
+      <div class="split-item">
+        <div class="split-pct" style="color:var(--navy)">${roomPct2}%</div>
+        <div class="split-lbl">Room</div>
+        <div style="font-size:0.7rem;color:var(--muted);margin-top:2px">${pkr(agg.cashRoom + agg.onlineRoom)}</div>
+      </div>
+      <div style="width:1px;background:var(--border);margin:4px 0"></div>
+      <div class="split-item">
+        <div class="split-pct" style="color:var(--gold)">${foodPct2}%</div>
+        <div class="split-lbl">Food</div>
+        <div style="font-size:0.7rem;color:var(--muted);margin-top:2px">${pkr(agg.food)}</div>
+      </div>
+    </div>
+    <div class="split-bar-track" style="margin-top:14px">
+      <div class="split-bar-room" style="width:${roomPct2}%"></div>
+    </div>
+    <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
+      <div class="kpi-label">RevPAR (All Time avg)</div>
+      <div class="kpi-value pkr" style="font-size:1.1rem">${
+        hist.length
+          ? Number(Math.round(hist.reduce((s,m)=>s+(m.revpar||0),0)/hist.length)).toLocaleString()
+          : '—'
+      }</div>
+      <div class="kpi-sub">Avg across ${hist.length} months</div>
+    </div>`;
+
+  // ── Occupancy breakdown panel ──
+  renderOccBreakdown(agg, period, d.mtd || {});
+}
+
+// ────────────────────────────────────────────────────────────────
+// OCCUPANCY BREAKDOWN PANEL
+// ────────────────────────────────────────────────────────────────
+function renderOccBreakdown(agg, period, mtd) {
+  const el = document.getElementById('occBreakdown');
+  const lbl = document.getElementById('occPeriodLabel');
+  if (!el) return;
+  if (lbl) lbl.textContent = '— ' + period.label;
+
+  const GUEST_ROOMS  = 13;
+  const STAFF_ROOMS  = 4;
+  const TOTAL_ROOMS  = 17;
+  const STAFF_ROOM_LIST = ['105','106','107','201'];
+  const ALL_ROOMS = ['101','102','103','104','105','106','107',
+                     '201','202','203','204','205','206','207','B1','B2'];
+
+  const guestOcc  = agg.guestRoomDays  || 0;
+  const staffOcc  = agg.staffRoomDays  || 0;
+  const guestPct  = agg.guestOccPct    || 0;
+  const staffPct  = agg.staffOccPct    || 0;
+  const oppCost   = agg.opportunityCost || 0;
+  const avgRate   = agg.avgGuestRate    || 0;
+
+  // Room visual — shows today's snapshot from mtd context
+  // (we approximate by showing guestPct rooms as occupied)
+  const approxGuestOcc = Math.round((guestPct / 100) * GUEST_ROOMS);
+  const roomDots = ALL_ROOMS.map(r => {
+    const isStaff = STAFF_ROOM_LIST.includes(r);
+    let cls, label;
+    if (isStaff) {
+      cls = 'occ-room-dot staff-perm'; label = r;
+    } else {
+      // fill guest rooms proportionally
+      const idx = ALL_ROOMS.filter(x => !STAFF_ROOM_LIST.includes(x)).indexOf(r);
+      cls = idx < approxGuestOcc ? 'occ-room-dot guest-occ' : 'occ-room-dot guest-empty';
+      label = r;
+    }
+    return `<div class="${cls}" title="Room ${r}">${r}</div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="occ-breakdown-grid">
+
+      <!-- Guest Rooms Block -->
+      <div class="occ-breakdown-block">
+        <div class="occ-bd-title navy">Guest Rooms (${GUEST_ROOMS} available)</div>
+        <div class="occ-bd-row">
+          <span class="occ-bd-label">Occupancy %</span>
+          <span class="occ-bd-val ${guestPct>=70?'green':guestPct>=40?'gold':'red'}">${guestPct}%</span>
+        </div>
+        <div class="occ-bd-row">
+          <span class="occ-bd-label">Room nights</span>
+          <span class="occ-bd-val">${guestOcc}</span>
+        </div>
+        <div class="occ-bd-row">
+          <span class="occ-bd-label">Avg rate / night</span>
+          <span class="occ-bd-val">${pkr(avgRate)}</span>
+        </div>
+        <div class="occ-bd-row">
+          <span class="occ-bd-label">Revenue</span>
+          <span class="occ-bd-val green">${pkr(agg.cashRoom + agg.onlineRoom)}</span>
+        </div>
+      </div>
+
+      <!-- Staff Rooms Block -->
+      <div class="occ-breakdown-block staff-block">
+        <div class="occ-bd-title blue">Permanent Staff Rooms (${STAFF_ROOMS} fixed)</div>
+        <div class="occ-bd-row">
+          <span class="occ-bd-label">Occupancy %</span>
+          <span class="occ-bd-val blue">${staffPct}%</span>
+        </div>
+        <div class="occ-bd-row">
+          <span class="occ-bd-label">Room nights</span>
+          <span class="occ-bd-val blue">${staffOcc}</span>
+        </div>
+        <div class="occ-bd-row">
+          <span class="occ-bd-label">Non-cash value</span>
+          <span class="occ-bd-val blue">${pkr(agg.nonCash)}</span>
+        </div>
+        <div class="occ-bd-row">
+          <span class="occ-bd-label">Rooms</span>
+          <span class="occ-bd-val blue" style="font-size:0.72rem">105 · 106 · 107 · 201</span>
+        </div>
+      </div>
+
+      <!-- Opportunity Cost Block -->
+      <div class="occ-breakdown-block impact-block">
+        <div class="occ-bd-title gold">Staff Room Impact</div>
+        <div class="occ-bd-row">
+          <span class="occ-bd-label">Staff room nights (period)</span>
+          <span class="occ-bd-val gold">${staffOcc}</span>
+        </div>
+        <div class="occ-bd-row">
+          <span class="occ-bd-label">Avg guest rate used</span>
+          <span class="occ-bd-val">${pkr(avgRate)}</span>
+        </div>
+        <div class="occ-bd-row">
+          <span class="occ-bd-label">Opportunity cost</span>
+          <span class="occ-bd-val ${oppCost>0?'red':''}">
+            ${oppCost > 0 ? pkr(oppCost) : avgRate === 0 ? 'No guest data yet' : pkr(0)}
+          </span>
+        </div>
+        <div style="margin-top:8px;font-size:0.68rem;color:var(--muted);line-height:1.5">
+          ${oppCost > 0
+            ? `If staff rooms were let to paying guests at the current avg rate, this period would generate an additional <b style="color:var(--navy)">${pkr(oppCost)}</b>.`
+            : 'No paying guest data in this period to calculate impact.'
+          }
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Room Visual -->
+    <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px">
+      <div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">
+        Room Layout — approx ${guestPct}% guest occupancy
+        <span style="margin-left:12px;font-weight:400">
+          <span style="display:inline-block;width:10px;height:10px;background:var(--navy);border-radius:2px;vertical-align:middle"></span> Guest (occupied)
+          <span style="display:inline-block;width:10px;height:10px;background:#e0ddd8;border-radius:2px;vertical-align:middle;margin-left:8px"></span> Guest (vacant)
+          <span style="display:inline-block;width:10px;height:10px;background:#2563eb;border-radius:2px;vertical-align:middle;margin-left:8px"></span> Staff (permanent)
+        </span>
+      </div>
+      <div class="occ-room-vis">${roomDots}</div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+//  ROOM GRID
+// ══════════════════════════════════════════════════════════
+function buildRoomGrid() {
+  const grid = document.getElementById('roomGrid');
+  if (!CONFIG.rooms || !CONFIG.rooms.length) {
+    grid.innerHTML = '<div class="loading-msg">Waiting for config…</div>'; return;
+  }
+
+  // Define floors
+  const floors = [
+    { label: 'Ground Floor', rooms: ['101','102','103','104','105','106','107'] },
+    { label: 'First Floor',  rooms: ['201','202','203','204','205','206','207'] },
+    { label: 'Basement',     rooms: ['B1','B2'] },
+  ];
+
+  // Known staff rooms (pre-fill as non-cash)
+  const staffRooms = { '105': 'Mr Major Iqbal', '106': 'Shahzad Alam (DGM)', '107': 'Bilal Tariq (SNR Tech)', '201': 'CSR Female' };
+
+  grid.innerHTML = '';
+  ROOM_STATES = {};
+
+  floors.forEach(floor => {
+    const div = document.createElement('div');
+    div.style.cssText = 'grid-column:1/-1; border-bottom:1px solid var(--border); padding:6px 0 2px; margin-bottom:-4px; font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:1px;';
+    div.textContent = floor.label;
+    grid.appendChild(div);
+
+    floor.rooms.forEach(room => {
+      const isStaff = !!staffRooms[room];
+      const defaultName = staffRooms[room] || '';
+      const rate = CONFIG.nonCashRates?.['Staff – NonCash'] || 2000;
+
+      ROOM_STATES[room] = {
+        occupied: isStaff,
+        isStaff,
+        sameDay: false,
+        data: {
+          room, guestName: defaultName, pax: isStaff ? 1 : 0,
+          contact: '', guestType: isStaff ? 'Staff – NonCash' : '',
+          comments: '',
+          cashRoom: 0, onlineRoom: 0, nonCashRoom: isStaff ? rate : 0,
+          regularFood: 0, ffFoodBilled: 0, ffFoodDiscount: 0,
+          companyFood: 0, restoFood: 0, checkoutBfast: 0,
+          sameDay: false, checkinTime: '', checkoutTime: '',
+        }
+      };
+
+      const card = document.createElement('div');
+      card.className = 'room-card' + (isStaff ? ' staff' : '');
+      card.id = 'room-card-' + room;
+      card.innerHTML = buildRoomCard(room, isStaff, defaultName, rate);
+      grid.appendChild(card);
+
+      if (isStaff) {
+        card.querySelector('.room-body').classList.add('visible');
+      }
+    });
+  });
+
+  updateLiveTotals();
+}
+
+function buildRoomCard(room, isStaff, defaultName, rate) {
+  const types = CONFIG.guestTypes || [];
+  const typeOptions = types.map(t => `<option value="${t}"${t === (isStaff ? 'Staff – NonCash' : '')?' selected':''}>${t}</option>`).join('');
+
+  return `
+    <div class="room-header ${isStaff ? 'staff' : ''}" onclick="toggleRoom('${room}')">
+      <span class="room-num ${isStaff ? 'staff-room' : ''}">${room}</span>
+      <span class="room-status ${isStaff ? 'staff-s' : ''}" id="status-${room}">${isStaff ? 'STAFF' : 'VACANT'}</span>
+      <button class="room-toggle ${isStaff ? 'staff-on' : ''}" id="toggle-${room}" onclick="event.stopPropagation();toggleRoom('${room}')"></button>
+    </div>
+    <div class="room-body" id="body-${room}">
+      <div class="field-row">
+        <div class="field">
+          <label>Guest / Occupant Name</label>
+          <input type="text" id="name-${room}" value="${defaultName}" oninput="updateField('${room}','guestName',this.value)">
+        </div>
+        <div class="field">
+          <label>Pax</label>
+          <input type="number" id="pax-${room}" value="${isStaff?1:1}" min="1" max="10" style="width:70px"
+                 oninput="updateField('${room}','pax',parseInt(this.value)||1)">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Contact</label>
+          <input type="text" id="contact-${room}" oninput="updateField('${room}','contact',this.value)" placeholder="03xx">
+        </div>
+        <div class="field">
+          <label>Guest Type</label>
+          <select id="type-${room}" onchange="onTypeChange('${room}',this.value)">
+            <option value="">— Select —</option>${typeOptions}
+          </select>
+        </div>
+      </div>
+      <div class="field-row full">
+        <div class="field">
+          <label>Comments</label>
+          <input type="text" id="comments-${room}" oninput="updateField('${room}','comments',this.value)" placeholder="Optional">
+        </div>
+      </div>
+
+      <!-- Same-Day Stay Toggle -->
+      <div class="same-day-row" id="samedayRow-${room}">
+        <div class="same-day-label">
+          <span class="same-day-icon">🕐</span>
+          <span>Same-Day Stay</span>
+          <span class="same-day-hint">Late check-in &amp; early checkout on same calendar date</span>
+        </div>
+        <button class="room-toggle" id="samedayToggle-${room}"
+                onclick="toggleSameDay('${room}')"></button>
+      </div>
+      <div class="same-day-fields" id="samedayFields-${room}" style="display:none">
+        <div class="field-row">
+          <div class="field">
+            <label>Check-in Time</label>
+            <input type="time" id="checkinTime-${room}" value="01:00"
+                   oninput="updateField('${room}','checkinTime',this.value)">
+          </div>
+          <div class="field">
+            <label>Checkout Time</label>
+            <input type="time" id="checkoutTime-${room}" value="11:00"
+                   oninput="updateField('${room}','checkoutTime',this.value)">
+          </div>
+        </div>
+      </div>
+        <div class="money-label">Room Revenue</div>
+        <div class="money-group" style="margin-bottom:8px">
+          <div class="field">
+            <label>Cash (PKR)</label>
+            <input type="number" class="money" id="cashRoom-${room}" value="${isStaff?'':0}" min="0" step="500"
+                   oninput="updateNum('${room}','cashRoom',this.value)">
+          </div>
+          <div class="field">
+            <label>Online (PKR)</label>
+            <input type="number" class="money" id="onlineRoom-${room}" value="0" min="0" step="500"
+                   oninput="updateNum('${room}','onlineRoom',this.value)">
+          </div>
+        </div>
+        <div id="noncash-row-${room}" style="${isStaff?'':'display:none'}">
+          <div class="field" style="margin-bottom:8px">
+            <label>Non-Cash Room Rate <span class="noncash-badge">INTERNAL</span></label>
+            <input type="number" class="money" id="nonCashRoom-${room}" value="${isStaff?rate:0}" min="0" step="500"
+                   oninput="updateNum('${room}','nonCashRoom',this.value)">
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="money-label">Food Revenue</div>
+
+        <!-- Regular guest food -->
+        <div class="field-row" style="margin-bottom:6px">
+          <div class="field">
+            <label>Regular Food — Cash</label>
+            <input type="number" class="money" id="regularFood-${room}" value="0" min="0" step="100"
+                   oninput="updateNum('${room}','regularFood',this.value)">
+          </div>
+          <div class="field">
+            <label>Resto Walk-in Only</label>
+            <input type="number" class="money" id="restoFood-${room}" value="0" min="0" step="100"
+                   oninput="updateNum('${room}','restoFood',this.value)">
+          </div>
+        </div>
+
+        <!-- F&F food — shows always but labelled -->
+        <div style="background:#f0f4ff;border-radius:6px;padding:8px 10px;margin-bottom:6px">
+          <div class="money-label" style="color:#2563eb;margin-bottom:6px">F&F Discounted Food <span class="noncash-badge" style="background:#dbeafe;color:#2563eb">F&F RATE</span></div>
+          <div class="field-row three">
+            <div class="field">
+              <label>Billed (PKR)</label>
+              <input type="number" class="money" id="ffFoodBilled-${room}" value="0" min="0" step="50"
+                     oninput="updateNum('${room}','ffFoodBilled',this.value);calcFFSaving('${room}')">
+            </div>
+            <div class="field">
+              <label>Discount %</label>
+              <input type="number" class="money" id="ffFoodDiscount-${room}" value="0" min="0" max="100" step="5"
+                     placeholder="e.g. 30" oninput="updateNum('${room}','ffFoodDiscount',this.value);calcFFSaving('${room}')">
+            </div>
+            <div class="field">
+              <label>Saving (auto)</label>
+              <input type="number" class="money" id="ffFoodSaving-${room}" value="0" readonly
+                     style="background:#e8f0fe;color:#2563eb;cursor:default">
+            </div>
+          </div>
+        </div>
+
+        <!-- Company / staff food -->
+        <div class="field-row">
+          <div class="field">
+            <label>Company Food <span class="noncash-badge">INTERNAL</span></label>
+            <input type="number" class="money" id="companyFood-${room}" value="0" min="0" step="100"
+                   oninput="updateNum('${room}','companyFood',this.value)">
+          </div>
+          <div class="field">
+            <label style="color:var(--muted)">Checkout Bfast → use Checkout tab</label>
+            <input type="text" class="money" value="— add via Checkout tab —"
+                   readonly style="background:#f7f4ef;color:var(--muted);font-size:0.72rem;cursor:default">
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function toggleRoom(room) {
+  const state = ROOM_STATES[room];
+  state.occupied = !state.occupied;
+  const card   = document.getElementById('room-card-' + room);
+  const header = card.querySelector('.room-header');
+  const body   = document.getElementById('body-' + room);
+  const toggle = document.getElementById('toggle-' + room);
+  const status = document.getElementById('status-' + room);
+
+  card.className   = 'room-card' + (state.occupied ? (state.isStaff ? ' staff' : ' occupied') : '');
+  header.className = 'room-header' + (state.occupied ? (state.isStaff ? ' staff' : ' occupied') : '');
+  body.classList.toggle('visible', state.occupied);
+  toggle.className = 'room-toggle' + (state.occupied ? (state.isStaff ? ' staff-on' : ' on') : '');
+  status.className = 'room-status' + (state.occupied ? (state.isStaff ? ' staff-s' : ' occ') : '');
+  status.textContent = state.occupied ? (state.isStaff ? 'STAFF' : 'OCCUPIED') : 'VACANT';
+
+  if (!state.occupied) {
+    // Reset to zero when closed (unless staff room)
+    if (!state.isStaff) {
+      ['cashRoom','onlineRoom','nonCashRoom',
+       'regularFood','ffFoodBilled','ffFoodDiscount',
+       'companyFood','restoFood'].forEach(f => {
+        state.data[f] = 0;
+        const el = document.getElementById(f + '-' + room);
+        if (el) el.value = 0;
+      });
+    }
+  }
+  updateLiveTotals();
+}
+
+function updateField(room, field, val) {
+  ROOM_STATES[room].data[field] = val;
+}
+
+function updateNum(room, field, val) {
+  ROOM_STATES[room].data[field] = parseFloat(val) || 0;
+  updateLiveTotals();
+}
+
+function onTypeChange(room, type) {
+  ROOM_STATES[room].data.guestType = type;
+  const rate = CONFIG.nonCashRates?.[type] || 0;
+  const isNonCash = rate > 0;
+  const noncashRow = document.getElementById('noncash-row-' + room);
+
+  if (isNonCash) {
+    noncashRow.style.display = '';
+    const el = document.getElementById('nonCashRoom-' + room);
+    el.value = rate;
+    ROOM_STATES[room].data.nonCashRoom = rate;
+    // Clear cash fields
+    ['cashRoom','onlineRoom'].forEach(f => {
+      document.getElementById(f+'-'+room).value = 0;
+      ROOM_STATES[room].data[f] = 0;
+    });
+  } else {
+    noncashRow.style.display = 'none';
+    ROOM_STATES[room].data.nonCashRoom = 0;
+    document.getElementById('nonCashRoom-' + room).value = 0;
+  }
+  updateLiveTotals();
+}
+
+function updateLiveTotals() {
+  let totalCash = 0, totalFF = 0, occupied = 0;
+  Object.values(ROOM_STATES).forEach(s => {
+    if (!s.occupied) return;
+    occupied++;
+    totalCash += (s.data.cashRoom||0) + (s.data.regularFood||0) + (s.data.restoFood||0);
+    totalFF   += (s.data.ffFoodBilled||0);
+  });
+  document.getElementById('liveTotals').innerHTML =
+    `<b>${occupied}</b> rooms · Cash: <b>${pkr(totalCash)}</b>${totalFF > 0 ? ` · F&F Food: <b>${pkr(totalFF)}</b>` : ''}`;
+}
+
+// ══════════════════════════════════════════════════════════
+//  SUBMIT
+// ══════════════════════════════════════════════════════════
+async function submitDay() {
+  const date = document.getElementById('submitDate').value;
+  const submittedBy = document.getElementById('submittedBy').value.trim() || 'Portal User';
+  const btn  = document.getElementById('btnSubmit');
+
+  if (!date) { toast('Please select a date', 'error'); return; }
+
+  const entries = Object.values(ROOM_STATES)
+    .filter(s => s.occupied)
+    .map(s => s.data);
+
+  if (!entries.length) { toast('No rooms are marked as occupied', 'error'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
+
+  try {
+    const r = await gasPost({ action: 'submitDay', date, entries, submittedBy });
+    if (r.ok) {
+      toast(`✓ Submitted ${r.written?.length || entries.length} rooms for ${formatDisplayDate(date)}`, 'success');
+      btn.textContent = '✓ Submitted';
+      setTimeout(() => { btn.disabled = false; btn.textContent = 'Submit Day'; }, 3000);
+    } else {
+      toast('Error: ' + r.error, 'error');
+      btn.disabled = false; btn.textContent = 'Submit Day';
+    }
+  } catch(e) {
+    toast('Network error. Check connection.', 'error');
+    btn.disabled = false; btn.textContent = 'Submit Day';
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  LOG — 7-DAY SUMMARY
+// ══════════════════════════════════════════════════════════
+async function loadLast7Log() {
+  const container = document.getElementById('log7Container');
+  const btn = document.getElementById('logRefreshBtn');
+  container.innerHTML = '<div class="loading-msg"><div class="spinner"></div>Loading last 7 days…</div>';
+  if (btn) { btn.disabled = true; btn.textContent = '↻ Loading…'; }
+
+  try {
+    const r = await gasPost({ action: 'getLast7DaysLog' });
+    if (!r.ok) { container.innerHTML = `<p style="color:var(--red)">Error: ${r.error}</p>`; return; }
+    renderLast7Log(r.days, container);
+  } catch(e) {
+    container.innerHTML = '<p style="color:var(--red)">Network error — check connection.</p>';
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '↻ Refresh'; }
+  }
+}
+
+function renderLast7Log(days, container) {
+  const DAYS_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const today = todayISO();
+
+  container.innerHTML = days.map((day, idx) => {
+    const isToday = day.date === today;
+    const dateObj = new Date(day.date + 'T00:00:00');
+    const dowLabel = isToday ? 'Today' : DAYS_SHORT[dateObj.getDay()];
+    const displayDate = formatDisplayDate(day.date);
+
+    const blockClass = [
+      'day-block',
+      isToday ? 'today-block' : (day.submitted ? 'submitted' : 'not-submitted'),
+    ].join(' ');
+
+    // Occupancy colour
+    const occClass = day.occPct >= 60 ? 'high' : day.occPct >= 30 ? 'medium' : 'low';
+
+    // Sub badge
+    const subBadge = day.submitted
+      ? `<span class="sub-badge yes">✓ Logged</span>`
+      : `<span class="sub-badge no">✗ Not Logged</span>`;
+
+    // Summary row
+    const summaryHtml = `
+      <div class="day-summary" onclick="toggleDayDetail('day-${idx}')">
+        <div class="day-col">
+          <div class="day-date-main">${dowLabel} · ${displayDate}</div>
+          <div class="day-date-sub">${day.date}</div>
+        </div>
+        <div class="day-col">
+          <div class="day-col-label">Guest Rooms · Food</div>
+          <div class="day-col-value">${day.guestRooms} rooms</div>
+          <div class="day-col-sub">
+            Cash ${(day.guestCash/1000).toFixed(0)}k
+            · Online ${(day.guestOnline/1000).toFixed(0)}k
+            · Food ${(day.guestFood/1000).toFixed(0)}k
+          </div>
+        </div>
+        <div class="day-col">
+          <div class="day-col-label">Staff Rooms · Food</div>
+          <div class="day-col-value">${day.staffRooms} rooms</div>
+          <div class="day-col-sub">
+            NonCash ${(day.nonCashTotal/1000).toFixed(0)}k
+            · Co. Food ${(day.staffFood/1000).toFixed(0)}k
+          </div>
+        </div>
+        <div class="day-col">
+          <div class="day-col-label">Total Guest Revenue</div>
+          <div class="day-col-value">PKR ${Number(day.totalGuestRevenue).toLocaleString()}</div>
+          <div class="day-col-sub">
+            Resto walk-in: ${(day.restoFood/1000).toFixed(0)}k
+          </div>
+        </div>
+        <div class="day-col">
+          <div class="day-col-label">Occupancy</div>
+          <span class="occ-pill ${occClass}">${day.occPct}%</span>
+          <div class="day-col-sub" style="margin-top:4px">${day.guestRooms}/${day.guestRoomsAvailable} rooms</div>
+        </div>
+        <div class="day-col" style="text-align:center">
+          ${subBadge}
+          <div style="font-size:0.62rem;color:var(--muted);margin-top:6px">
+            ${day.submitted ? day.entries.length + ' entries' : 'No data'}
+            <span class="day-chevron">▼</span>
+          </div>
+        </div>
+      </div>`;
+
+    // Detail table (shown on expand)
+    let detailHtml = '';
+    if (!day.submitted) {
+      detailHtml = `<div class="no-sub-msg">⚠ No submission recorded for ${displayDate}. Reception must submit this day's data.</div>`;
+    } else {
+      const detailCols = [
+        ['Room','Room'],['Guest_Name','Guest'],['Guest_Type','Type'],
+        ['Cash_Room','Cash Rm'],['Online_Room','Online Rm'],['NonCash_Room','NC Rm'],
+        ['Cash_Food','Cash Fd'],['Company_Food','Co. Fd'],['Resto_Food','Resto'],
+        ['Comments','Comments'],
+      ];
+      const pkrCols = new Set(['Cash_Room','Online_Room','NonCash_Room','Cash_Food','Online_Food','Company_Food','Resto_Food']);
+
+      let rows = '';
+      day.entries.forEach(e => {
+        const isStaff = (e.Guest_Type||'').includes('NonCash') || (e.Guest_Type||'').includes('Staff')
+                     || (e.Guest_Type||'').includes('Intern') || (e.Guest_Type||'').includes('F&F');
+        rows += `<tr style="${isStaff ? 'background:#f0f4ff' : ''}">` +
+          detailCols.map(([k]) => {
+            const val = e[k] ?? '';
+            if (k === 'Room') return `<td class="td-room">${val}</td>`;
+            if (pkrCols.has(k)) {
+              const n = parseFloat(val) || 0;
+              return `<td class="td-pkr ${n===0?'zero':''}">${n>0?Number(n).toLocaleString():'—'}</td>`;
+            }
+            if (k === 'Guest_Type') {
+              const cls = isStaff ? 'staff' : (e.Guest_Type||'').includes('F&F') ? 'ff' : 'guest';
+              return `<td><span class="badge ${cls}">${val||'—'}</span></td>`;
+            }
+            return `<td>${val||'—'}</td>`;
+          }).join('') + '</tr>';
+      });
+
+      // Totals row for the detail
+      const totals = {};
+      ['Cash_Room','Online_Room','NonCash_Room','Cash_Food','Online_Food','Company_Food','Resto_Food']
+        .forEach(k => totals[k] = day.entries.reduce((s,e) => s + (parseFloat(e[k])||0), 0));
+
+      rows += `<tr class="month-totals">
+        <td><b>TOTAL</b></td>
+        <td></td>
+        <td></td>
+        ${['Cash_Room','Online_Room','NonCash_Room','Cash_Food','Company_Food','Resto_Food']
+            .map(k => `<td class="td-pkr"><b>${Number(totals[k]).toLocaleString()}</b></td>`).join('')}
+        <td></td>
+      </tr>`;
+
+      detailHtml = `
+        <div class="table-wrap" style="padding:0 16px 14px">
+          <table>
+            <thead><tr>${detailCols.map(([,h]) => `<th>${h}</th>`).join('')}</tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+    }
+
+    return `
+      <div class="${blockClass}" id="day-${idx}">
+        ${summaryHtml}
+        <div class="day-detail">${detailHtml}</div>
+      </div>`;
+  }).join('');
+}
+
+function toggleDayDetail(id) {
+  const block = document.getElementById(id);
+  if (block) block.classList.toggle('expanded');
+}
+
+// ══════════════════════════════════════════════════════════
+//  MONTHLY SUMMARY
+// ══════════════════════════════════════════════════════════
+async function loadMonthlySummary() {
+  const month = document.getElementById('summaryMonth').value;
+  const div   = document.getElementById('summaryTable');
+  if (!month) { toast('Select a month', 'error'); return; }
+
+  div.innerHTML = '<div class="loading-msg"><div class="spinner"></div>Loading…</div>';
+
+  try {
+    const r = await gasPost({ action: 'getMonthlySummary', month });
+    if (!r.ok) { div.innerHTML = `<p style="color:red">${r.error}</p>`; return; }
+    if (!r.rows.length) { div.innerHTML = `<p class="loading-msg">No data for ${month}</p>`; return; }
+    renderSummaryTable(r.rows, div);
+  } catch(e) {
+    div.innerHTML = '<p style="color:var(--red)">Network error</p>';
+  }
+}
+
+function renderSummaryTable(rows, container) {
+  const cols = [
+    ['Date','Date'],
+    ['Cash_Room','Cash Room'],['Online_Room','Online Room'],['NonCash_Room','NC Room'],
+    ['Regular_Food','Reg. Food'],['FF_Food_Billed','F&F Billed'],['FF_Food_Saving','F&F Saving'],
+    ['Company_Food','Co. Food'],['Resto_Food','Resto'],['Checkout_Bfast','Chk Bfast'],
+    ['Total_Revenue','Total Revenue'],['Total_NonCash','Total NonCash'],
+    ['Rooms_Occupied','Occ'],
+  ];
+  const pkrCols = new Set([
+    'Cash_Room','Online_Room','NonCash_Room',
+    'Regular_Food','FF_Food_Billed','FF_Food_Saving','Company_Food','Resto_Food','Checkout_Bfast',
+    'Total_Revenue','Total_NonCash',
+  ]);
+
+  const totals = {};
+  cols.forEach(([k]) => totals[k] = 0);
+  rows.forEach(row => cols.forEach(([k]) => totals[k] += parseFloat(row[k])||0));
+
+  let html = `<table><thead><tr>${cols.map(([,h]) => `<th>${h}</th>`).join('')}</tr></thead><tbody>`;
+  rows.forEach(row => {
+    html += '<tr>' + cols.map(([k]) => {
+      if (k === 'Date') return `<td class="col-date">${row[k]||''}</td>`;
+      if (k === 'Rooms_Occupied') return `<td style="text-align:center">${parseInt(row[k])||0}</td>`;
+      if (k === 'FF_Food_Saving') {
+        const n = parseFloat(row[k])||0;
+        return `<td class="td-pkr" style="${n>0?'color:var(--green)':''}">${n>0?Number(n).toLocaleString():'—'}</td>`;
+      }
+      if (k === 'Checkout_Bfast') {
+        const n = parseFloat(row[k])||0;
+        return `<td class="td-pkr" style="${n>0?'color:var(--gold)':''}">${n>0?Number(n).toLocaleString():'—'}</td>`;
+      }
+      if (pkrCols.has(k)) {
+        const n = parseFloat(row[k])||0;
+        return `<td class="td-pkr ${n===0?'zero':''}">${n>0?Number(n).toLocaleString():'—'}</td>`;
+      }
+      return `<td>${row[k]||''}</td>`;
+    }).join('') + '</tr>';
+  });
+
+  html += '<tr class="month-totals"><td><b>TOTAL</b></td>' + cols.slice(1).map(([k]) => {
+    if (k === 'Rooms_Occupied') return `<td style="text-align:center">—</td>`;
+    if (pkrCols.has(k)) return `<td class="td-pkr"><b>${Number(totals[k]).toLocaleString()}</b></td>`;
+    return `<td>—</td>`;
+  }).join('') + '</tr>';
+
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════
+//  SAME-DAY STAY TOGGLE
+// ══════════════════════════════════════════════════════════
+function toggleSameDay(room) {
+  const state  = ROOM_STATES[room];
+  if (!state) return;
+  state.sameDay         = !state.sameDay;
+  state.data.sameDay    = state.sameDay;
+  const toggle = document.getElementById('samedayToggle-' + room);
+  const fields = document.getElementById('samedayFields-'  + room);
+  const header = document.getElementById('room-card-'      + room)
+                          ?.querySelector('.room-status');
+  if (toggle) toggle.className = 'room-toggle' + (state.sameDay ? ' on' : '');
+  if (fields) fields.style.display = state.sameDay ? 'block' : 'none';
+  // If enabling, seed default times
+  if (state.sameDay) {
+    const ci = document.getElementById('checkinTime-'  + room);
+    const co = document.getElementById('checkoutTime-' + room);
+    if (ci && !ci.value) ci.value = '01:00';
+    if (co && !co.value) co.value = '11:00';
+    state.data.checkinTime  = ci?.value || '01:00';
+    state.data.checkoutTime = co?.value || '11:00';
+  } else {
+    state.data.checkinTime  = '';
+    state.data.checkoutTime = '';
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  F&B ONLY MODAL
+// ══════════════════════════════════════════════════════════
+function openFnbModal() {
+  const modal = document.getElementById('fnbModal');
+  if (!modal) return;
+  // Pre-fill date from submit form
+  const submitDate = document.getElementById('submitDate')?.value;
+  if (submitDate) document.getElementById('fnbDate').value = submitDate;
+  // Clear fields
+  ['fnbDesc','fnbRegular','fnbCompany','fnbResto','fnbFFBilled','fnbFFDiscount','fnbFFSaving']
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = el.type === 'number' ? 0 : '';
+    });
+  document.getElementById('fnbResult').innerHTML = '';
+  const btn = document.getElementById('fnbSubmitBtn');
+  if (btn) { btn.disabled = false; btn.textContent = 'Save F&B Entry'; }
+  modal.classList.add('open');
+}
+
+function closeFnbModal(event) {
+  // Only close if clicking the overlay itself, not the card
+  if (event.target === document.getElementById('fnbModal')) {
+    closeFnbModalDirect();
+  }
+}
+
+function closeFnbModalDirect() {
+  document.getElementById('fnbModal')?.classList.remove('open');
+}
+
+function calcFnbFFSaving() {
+  const billed   = parseFloat(document.getElementById('fnbFFBilled')?.value)   || 0;
+  const discount = parseFloat(document.getElementById('fnbFFDiscount')?.value) || 0;
+  const savingEl = document.getElementById('fnbFFSaving');
+  if (!savingEl) return;
+  let saving = 0;
+  if (discount > 0 && billed > 0) {
+    const fullValue = Math.round(billed / (1 - discount / 100));
+    saving = fullValue - billed;
+  }
+  savingEl.value = saving;
+}
+
+async function submitFnbEntry() {
+  const date       = document.getElementById('fnbDate').value;
+  const desc       = document.getElementById('fnbDesc').value.trim() || 'F&B Walk-in';
+  const regular    = parseFloat(document.getElementById('fnbRegular').value)   || 0;
+  const company    = parseFloat(document.getElementById('fnbCompany').value)   || 0;
+  const resto      = parseFloat(document.getElementById('fnbResto').value)     || 0;
+  const ffBilled   = parseFloat(document.getElementById('fnbFFBilled').value)  || 0;
+  const ffDiscount = parseFloat(document.getElementById('fnbFFDiscount').value)|| 0;
+  const ffSaving   = parseFloat(document.getElementById('fnbFFSaving').value)  || 0;
+  const submittedBy= document.getElementById('submittedBy')?.value.trim() || 'Portal';
+
+  if (!date) { toast('Select a date for the F&B entry', 'error'); return; }
+  const total = regular + company + resto + ffBilled;
+  if (total <= 0) { toast('Enter at least one food amount', 'error'); return; }
+
+  const btn    = document.getElementById('fnbSubmitBtn');
+  const result = document.getElementById('fnbResult');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  // F&B-only entries use Room = "F&B" as a reserved identifier
+  const entry = {
+    room:         'F&B',
+    guestName:    desc,
+    pax:          0,
+    contact:      '',
+    guestType:    'F&B Only',
+    comments:     'F&B only entry — no room stay',
+    cashRoom:     0, onlineRoom: 0, nonCashRoom: 0,
+    regularFood:  regular,
+    ffFoodBilled: ffBilled,
+    ffFoodDiscount: ffDiscount,
+    companyFood:  company,
+    restoFood:    resto,
+    checkoutBfast:0,
+    sameDay:      false, checkinTime: '', checkoutTime: '',
+  };
+
+  try {
+    const r = await gasPost({ action: 'submitDay', date, entries: [entry], submittedBy });
+    if (r.ok) {
+      result.innerHTML = `<div class="co-success">✓ F&B entry saved — PKR ${Number(total).toLocaleString()} on ${formatDisplayDate(date)}</div>`;
+      toast(`✓ F&B entry saved for ${formatDisplayDate(date)}`, 'success');
+      btn.textContent = '✓ Saved';
+      setTimeout(() => closeFnbModalDirect(), 2000);
+    } else {
+      result.innerHTML = `<div class="co-error">✗ ${r.error}</div>`;
+      btn.disabled = false; btn.textContent = 'Save F&B Entry';
+    }
+  } catch(e) {
+    result.innerHTML = `<div class="co-error">✗ Network error</div>`;
+    btn.disabled = false; btn.textContent = 'Save F&B Entry';
+  }
+}
+// ══════════════════════════════════════════════════════════
+function toast(msg, type = 'info') {
+  const area = document.getElementById('toastArea');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  area.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+
+// ══════════════════════════════════════════════════════════
+//  CHECKOUT TAB
+// ══════════════════════════════════════════════════════════
+
+function coReset() {
+  document.getElementById('coPreview').style.display  = 'none';
+  document.getElementById('coNotFound').style.display = 'none';
+  document.getElementById('coResult').innerHTML       = '';
+  const btn = document.getElementById('coBtnSubmit');
+  if (btn) { btn.disabled = false; btn.textContent = 'Add Breakfast Charge'; }
+}
+
+async function loadCheckoutRoom() {
+  const date = document.getElementById('coDate').value;
+  const room = document.getElementById('coRoom').value;
+
+  if (!date || !room) { toast('Select both a date and a room first', 'error'); return; }
+
+  document.getElementById('coPreview').style.display  = 'none';
+  document.getElementById('coNotFound').style.display = 'none';
+  document.getElementById('coResult').innerHTML       = '<div class="loading-msg"><div class="spinner"></div>Loading record…</div>';
+
+  try {
+    const r = await gasPost({ action: 'getCheckoutRoom', date, room });
+    document.getElementById('coResult').innerHTML = '';
+
+    if (!r.ok) { toast('Error: ' + r.error, 'error'); return; }
+
+    if (!r.found) {
+      document.getElementById('coNotFound').style.display = 'block';
+      return;
+    }
+
+    // Render the preview card
+    const e = r.entry;
+    const nn = (v) => parseFloat(v)||0;
+    const fmtPKR = (v) => nn(v) > 0
+      ? `<span class="co-val pkr">${Number(nn(v)).toLocaleString()}</span>`
+      : `<span class="co-val zero">—</span>`;
+
+    const existingBfast = nn(e.Checkout_Bfast);
+
+    document.getElementById('coPreviewCard').innerHTML = `
+      <div class="co-preview-item">
+        <div class="co-lbl">Room</div>
+        <div class="co-val">${e.Room || room}</div>
+      </div>
+      <div class="co-preview-item">
+        <div class="co-lbl">Stay Date</div>
+        <div class="co-val">${e.Date || date}</div>
+      </div>
+      <div class="co-preview-item">
+        <div class="co-lbl">Guest</div>
+        <div class="co-val">${e.Guest_Name || '—'}</div>
+      </div>
+      <div class="co-preview-item">
+        <div class="co-lbl">Guest Type</div>
+        <div class="co-val">${e.Guest_Type || '—'}</div>
+      </div>
+      <div class="co-preview-item">
+        <div class="co-lbl">Cash Room</div>
+        ${fmtPKR(e.Cash_Room)}
+      </div>
+      <div class="co-preview-item">
+        <div class="co-lbl">Regular Food</div>
+        ${fmtPKR(e.Regular_Food)}
+      </div>
+      <div class="co-preview-item">
+        <div class="co-lbl">F&F Food Billed</div>
+        ${fmtPKR(e.FF_Food_Billed)}
+      </div>
+      <div class="co-preview-item">
+        <div class="co-lbl">Checkout Bfast (current)</div>
+        <div class="co-val ${existingBfast > 0 ? 'highlight' : 'zero'}">
+          ${existingBfast > 0 ? 'PKR ' + Number(existingBfast).toLocaleString() : 'None yet'}
+        </div>
+      </div>
+    `;
+
+    document.getElementById('coPreview').style.display = 'block';
+
+    // Pre-fill submittedBy from main form if available
+    const mainBy = document.getElementById('submittedBy')?.value;
+    if (mainBy) document.getElementById('coSubmittedBy').value = mainBy;
+
+  } catch(err) {
+    document.getElementById('coResult').innerHTML = '';
+    toast('Network error loading record', 'error');
+  }
+}
+
+async function submitCheckoutBreakfast() {
+  const date    = document.getElementById('coDate').value;
+  const room    = document.getElementById('coRoom').value;
+  const bfast   = parseFloat(document.getElementById('coBfastAmount').value) || 0;
+  const byWhom  = document.getElementById('coSubmittedBy').value.trim() || 'Portal';
+  const btn     = document.getElementById('coBtnSubmit');
+  const result  = document.getElementById('coResult');
+
+  if (!date || !room)  { toast('Date and room are required', 'error'); return; }
+  if (bfast <= 0)      { toast('Enter a breakfast amount greater than zero', 'error'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  result.innerHTML = '';
+
+  try {
+    const r = await gasPost({
+      action:      'appendCheckoutBreakfast',
+      date, room,
+      breakfast:   bfast,
+      submittedBy: byWhom,
+    });
+
+    if (r.ok) {
+      result.innerHTML = `
+        <div class="co-success">
+          ✓ Breakfast of PKR ${Number(bfast).toLocaleString()} added to Room ${room} — ${formatDisplayDate(date)}<br>
+          <span style="font-weight:400;font-size:0.75rem">Total checkout breakfast on this stay: PKR ${Number(r.newTotal).toLocaleString()}</span>
+        </div>`;
+      toast(`✓ Breakfast PKR ${Number(bfast).toLocaleString()} saved to ${room} / ${date}`, 'success');
+      // Reload the preview to reflect updated total
+      await loadCheckoutRoom();
+      document.getElementById('coBfastAmount').value = '';
+    } else {
+      result.innerHTML = `<div class="co-error">✗ ${r.error}</div>`;
+      btn.disabled = false;
+      btn.textContent = 'Add Breakfast Charge';
+    }
+  } catch(err) {
+    result.innerHTML = `<div class="co-error">✗ Network error — check connection.</div>`;
+    btn.disabled = false;
+    btn.textContent = 'Add Breakfast Charge';
+  }
+}
+
+// ── F&F Saving auto-calculator ─────────────────────────────────
+function calcFFSaving(room) {
+  const billed   = parseFloat(document.getElementById('ffFoodBilled-'   + room)?.value) || 0;
+  const discount = parseFloat(document.getElementById('ffFoodDiscount-' + room)?.value) || 0;
+  const savingEl = document.getElementById('ffFoodSaving-' + room);
+  if (!savingEl) return;
+
+  let saving = 0;
+  if (discount > 0 && billed > 0) {
+    const fullValue = Math.round(billed / (1 - discount / 100));
+    saving = fullValue - billed;
+  }
+  savingEl.value = saving;
+  ROOM_STATES[room].data.ffFoodDiscount = discount;
+}
+// ══════════════════════════════════════════════════════════
+const CONFIG_PIN = '1234';
+let cfgUnlocked  = false;
+let cfgData      = null;   // cached config from server
+
+function unlockConfig() {
+  const pin = document.getElementById('cfgPinInput').value.trim();
+  const err = document.getElementById('cfgPinError');
+  if (pin !== CONFIG_PIN) {
+    err.textContent = 'Incorrect PIN. Please try again.';
+    document.getElementById('cfgPinInput').value = '';
+    return;
+  }
+  err.textContent = '';
+  cfgUnlocked = true;
+  document.getElementById('cfg-pin-gate').style.display = 'none';
+  document.getElementById('cfg-panel').style.display    = 'block';
+  loadConfigPanel();
+}
+
+function lockConfig() {
+  cfgUnlocked = false;
+  document.getElementById('cfg-pin-gate').style.display = 'block';
+  document.getElementById('cfg-panel').style.display    = 'none';
+  document.getElementById('cfgPinInput').value = '';
+}
+
+async function loadConfigPanel() {
+  try {
+    const r = await gasPost({ action: 'getConfig' });
+    if (!r.ok) { toast('Config load failed: ' + r.error, 'error'); return; }
+    cfgData = r;
+    renderConfigPanel(r);
+  } catch(e) { toast('Network error loading config', 'error'); }
+}
+
+function renderConfigPanel(r) {
+  // ── Non-cash rates ──
+  const rates = r.nonCashRates || {};
+  document.getElementById('cfgRatesBody').innerHTML =
+    `<div class="cfg-rows">${
+      Object.entries(rates).map(([label, val]) => `
+        <div class="cfg-row">
+          <div class="cfg-row-label">${label}</div>
+          <input type="number" class="cfg-row-input" id="rate_${sanitizeId(label)}"
+                 value="${val}" min="0" step="100">
+          <span class="cfg-row-unit">PKR</span>
+        </div>`).join('')
+    }</div>`;
+
+  // ── Food prices ──
+  const food = r.foodPrices || {};
+  document.getElementById('cfgFoodBody').innerHTML =
+    `<div class="cfg-rows">${
+      Object.entries(food).map(([label, val]) => `
+        <div class="cfg-row">
+          <div class="cfg-row-label">${label}</div>
+          <input type="number" class="cfg-row-input" id="food_${sanitizeId(label)}"
+                 value="${val}" min="0" step="50">
+          <span class="cfg-row-unit">PKR</span>
+        </div>`).join('')
+    }</div>`;
+
+  // ── Guest types (read-only) ──
+  const types = r.guestTypes || [];
+  document.getElementById('cfgTypesBody').innerHTML =
+    `<div class="cfg-badge-wrap">${
+      types.map(t => `<span class="cfg-badge">${t}</span>`).join('')
+    }</div>`;
+
+  // ── Rooms (read-only) ──
+  const rooms = r.rooms || [];
+  document.getElementById('cfgRoomsBody').innerHTML =
+    `<div class="cfg-badge-wrap">${
+      rooms.map(rm => `<span class="cfg-badge room">${rm}</span>`).join('')
+    }</div>`;
+}
+
+async function saveSection(section) {
+  if (!cfgData) return;
+  const msgEl = document.getElementById(section === 'rates' ? 'ratesSaveMsg' : 'foodSaveMsg');
+  msgEl.textContent = 'Saving…';
+  msgEl.className = 'cfg-save-msg';
+
+  const keyPrefix = section === 'rates' ? 'rate_' : 'food_';
+  const sourceObj = section === 'rates' ? (cfgData.nonCashRates||{}) : (cfgData.foodPrices||{});
+
+  const updated = {};
+  Object.keys(sourceObj).forEach(label => {
+    const el = document.getElementById(keyPrefix + sanitizeId(label));
+    if (el) updated[label] = parseFloat(el.value) || 0;
+  });
+
+  const payload = {
+    action:   'saveConfig',
+    pin:      CONFIG_PIN,
+    savedBy:  document.getElementById('submittedBy')?.value || 'Config Panel',
+    nonCashRates: section === 'rates' ? updated : (cfgData.nonCashRates || {}),
+    foodPrices:   section === 'food'  ? updated : (cfgData.foodPrices   || {}),
+  };
+
+  try {
+    const r = await gasPost(payload);
+    if (r.ok) {
+      // Update local cache
+      if (section === 'rates') cfgData.nonCashRates = updated;
+      else                      cfgData.foodPrices   = updated;
+      // Also update the global CONFIG used by Submit form
+      if (section === 'rates') CONFIG.nonCashRates = updated;
+
+      msgEl.textContent = '✓ Saved';
+      msgEl.className   = 'cfg-save-msg ok';
+      toast('Config saved successfully', 'success');
+    } else {
+      msgEl.textContent = '✗ ' + r.error;
+      msgEl.className   = 'cfg-save-msg err';
+    }
+  } catch(e) {
+    msgEl.textContent = '✗ Network error';
+    msgEl.className   = 'cfg-save-msg err';
+  }
+  setTimeout(() => { msgEl.textContent = ''; }, 4000);
+}
+
+function sanitizeId(str) {
+  return str.replace(/[^a-zA-Z0-9]/g, '_');
+}
+</script>
+</body>
+</html>
